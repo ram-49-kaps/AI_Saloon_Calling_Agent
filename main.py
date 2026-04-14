@@ -16,12 +16,20 @@ from routes.admin import router as admin_router
 async def lifespan(app: FastAPI):
     """Startup: create tables + seed data. Shutdown: close DB engine."""
     print("🚀 Starting Salon Booking AI Agent...")
-    from init_db import init_db
-    await init_db()
-    print("✅ Database ready")
+    try:
+        from init_db import init_db
+        await init_db()
+        print("✅ Database ready")
+    except Exception as e:
+        import traceback
+        print("❌ DATABASE INITIALIZATION FAILED:")
+        traceback.print_exc()
     yield
-    await close_engine()
-    print("👋 Shutdown complete")
+    try:
+        await close_engine()
+        print("👋 Shutdown complete")
+    except Exception:
+        pass
 
 
 app = FastAPI(
