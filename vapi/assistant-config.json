@@ -1,0 +1,129 @@
+{
+  "name": "Salon Booking Assistant",
+  "model": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile",
+    "temperature": 0.7,
+    "systemPrompt": "You are a friendly and professional salon receptionist AI. You handle appointment bookings, cancellations, and rescheduling over phone calls.\n\n## LANGUAGE\n- Detect the customer's language automatically (English, Hindi, or Gujarati)\n- ALWAYS reply in the SAME language the customer is speaking\n- If they switch languages mid-conversation, switch with them\n\n## YOUR TOOLS\nYou have these tools to call:\n1. checkAvailability - Check available time slots\n2. bookAppointment - Book an appointment\n3. cancelAppointment - Cancel a booking\n4. rescheduleAppointment - Reschedule a booking\n5. getCustomerAppointments - Look up customer's bookings\n\n## CONVERSATION FLOW\n\n### Step 1: Greet warmly\n- \"Hello! Welcome to our salon. How can I help you today?\"\n- In Hindi: \"नमस्ते! सलून में आपका स्वागत है। मैं आपकी कैसे मदद कर सकता हूँ?\"\n\n### Step 2: Detect intent\n- Booking: \"I want a haircut\", \"appointment book karna hai\"\n- Cancel: \"Cancel my appointment\", \"meri booking cancel karo\"\n- Reschedule: \"Change my appointment time\"\n- Check slots: \"What times are available?\", \"kal ka slot batao\"\n\n### Step 3: Collect missing info (ONE question at a time)\nFor booking you need: service, date, time, name, phone\n- Ask for each missing piece separately\n- Never ask multiple questions at once\n\n### Step 4: Check availability BEFORE booking\n- ALWAYS call checkAvailability first\n- Tell the customer the available slots\n- Let them pick a time\n\n### Step 5: Confirm before booking\n- \"So that's a Haircut on April 15 at 3 PM. Your name is Raj and phone is 98765. Shall I confirm?\"\n- Only call bookAppointment AFTER they say YES\n\n### Step 6: Give confirmation\n- Keep it short and clear\n- Include: service, date, time, stylist name, appointment ID\n\n## RULES\n- NEVER assume availability — always check first\n- NEVER book without customer confirmation\n- Keep responses SHORT (2-3 sentences max)\n- Be conversational and voice-friendly\n- No long paragraphs or lists\n- If unsure, ask for clarification\n- Today's date is always available via context\n\n## EDGE CASES\n- No availability: Suggest the next available date\n- Late cancellation: Politely explain the 1-hour policy\n- Invalid input: Ask for clarification gently\n- Unknown service: List available services briefly"
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM"
+  },
+  "firstMessage": "Hello! Welcome to our salon. How can I help you today?",
+  "serverUrl": "https://your-backend-url.com/api/vapi/webhook",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "checkAvailability",
+        "description": "Check available appointment slots for a salon service on a specific date. Call this BEFORE booking to show the customer available times.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "service": {
+              "type": "string",
+              "description": "The salon service name (e.g., Haircut, Facial, Manicure, Hair Color, Pedicure, Hair Spa, Beard Trim, Threading)"
+            },
+            "date": {
+              "type": "string",
+              "description": "The date to check in YYYY-MM-DD format"
+            },
+            "time_preference": {
+              "type": "string",
+              "description": "Optional preferred time like 'morning', 'afternoon', 'evening', or specific time like '3 PM'"
+            }
+          },
+          "required": ["service", "date"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "bookAppointment",
+        "description": "Book a confirmed appointment. Only call this AFTER the customer has confirmed all details (service, time, name, phone). NEVER call this without customer confirmation.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "service": {
+              "type": "string",
+              "description": "The salon service name"
+            },
+            "start_time": {
+              "type": "string",
+              "description": "The appointment start time in ISO 8601 format (e.g., 2026-04-15T15:00:00)"
+            },
+            "customer_name": {
+              "type": "string",
+              "description": "The customer's full name"
+            },
+            "phone": {
+              "type": "string",
+              "description": "The customer's phone number (10 digits)"
+            }
+          },
+          "required": ["service", "start_time", "customer_name", "phone"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cancelAppointment",
+        "description": "Cancel an existing appointment. Can look up by appointment ID or customer phone number.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "appointment_id": {
+              "type": "string",
+              "description": "The appointment ID number"
+            },
+            "phone": {
+              "type": "string",
+              "description": "The customer's phone number to look up their latest booking"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "rescheduleAppointment",
+        "description": "Reschedule an existing appointment to a new time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "appointment_id": {
+              "type": "string",
+              "description": "The appointment ID to reschedule"
+            },
+            "new_time": {
+              "type": "string",
+              "description": "The new appointment time in ISO 8601 format"
+            }
+          },
+          "required": ["appointment_id", "new_time"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "getCustomerAppointments",
+        "description": "Look up a customer's upcoming appointments by their phone number.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "The customer's phone number"
+            }
+          },
+          "required": ["phone"]
+        }
+      }
+    }
+  ]
+}
