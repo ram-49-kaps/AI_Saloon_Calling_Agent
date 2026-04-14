@@ -51,7 +51,7 @@ app.include_router(vapi_router)
 app.include_router(admin_router)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     """Health check endpoint."""
     return {"status": "ok", "service": "Salon Booking AI Agent"}
