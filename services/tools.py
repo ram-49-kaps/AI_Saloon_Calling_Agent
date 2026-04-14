@@ -143,7 +143,7 @@ async def book_appointment(args: dict, db: AsyncSession) -> str:
     service_name = args.get("service", "")
     start_time_str = args.get("start_time", "")
     customer_name = args.get("customer_name", "")
-    phone = args.get("phone", "")
+    phone = "".join(filter(str.isdigit, args.get("phone", "")))
     preferred_stylist = args.get("preferred_stylist", "")
 
     # Validate required fields
@@ -325,7 +325,8 @@ async def cancel_appointment(args: dict, db: AsyncSession) -> str:
     Args expected: { appointment_id?: str, phone?: str }
     """
     appointment_id = args.get("appointment_id")
-    phone = args.get("phone")
+    raw_phone = args.get("phone")
+    phone = "".join(filter(str.isdigit, raw_phone)) if raw_phone else None
 
     appointment = None
 
@@ -515,7 +516,8 @@ async def get_customer_appointments(args: dict, db: AsyncSession) -> str:
 
     Args expected: { phone: str }
     """
-    phone = args.get("phone")
+    raw_phone = args.get("phone")
+    phone = "".join(filter(str.isdigit, raw_phone)) if raw_phone else None
     if not phone:
         return "I need your phone number to look up your appointments."
 

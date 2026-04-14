@@ -5,7 +5,7 @@ import {
   Animated, Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { COLORS } from '../config';
+import { COLORS, FONTS, RADIUS } from '../config';
 import { login } from '../services/api';
 
 const { width } = Dimensions.get('window');
@@ -89,8 +89,8 @@ export default function LoginScreen({ onLogin }) {
 
       {/* Brand */}
       <View style={styles.brand}>
-        <Text style={styles.brandName}>ELITE SALON</Text>
-        <Text style={styles.brandSub}>MANAGEMENT SUITE</Text>
+        <Text style={styles.brandName}>Daxx Saloon.</Text>
+        <Text style={styles.brandSub}>AI SALON MANAGEMENT</Text>
       </View>
 
       {/* Title */}
@@ -144,39 +144,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.primary,
     letterSpacing: -0.5,
+    fontFamily: FONTS.display,
   },
   brandSub: {
     fontSize: 10,
     color: COLORS.outline,
     letterSpacing: 4,
     marginTop: 4,
+    fontFamily: FONTS.body,
   },
   header: { alignItems: 'center', marginBottom: 32 },
-  title: { fontSize: 24, fontWeight: '700', color: COLORS.onSurface },
+  title: { fontSize: 24, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
   subtitle: {
     fontSize: 10,
     color: COLORS.outline,
     letterSpacing: 3,
     marginTop: 6,
+    fontFamily: FONTS.body,
   },
   dotsRow: { flexDirection: 'row', gap: 24, marginBottom: 8 },
   dot: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant,
     backgroundColor: COLORS.surfaceContainerLow,
   },
   dotFilled: {
     backgroundColor: COLORS.primaryContainer,
-    borderColor: COLORS.primary,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 8,
   },
-  error: { color: COLORS.error, fontSize: 12, height: 20, marginTop: 4, letterSpacing: 1 },
+  error: { color: COLORS.error, fontSize: 12, height: 20, marginTop: 4, letterSpacing: 1, fontFamily: FONTS.body },
   keypad: { width: width * 0.72, marginTop: 24 },
   keyRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
   key: {
@@ -186,10 +186,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceContainerLow,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.outlineVariant + '15',
   },
-  keyText: { fontSize: 24, fontWeight: '300', color: COLORS.onSurface },
+  keyText: { fontSize: 24, fontWeight: '400', color: COLORS.onSurface, fontFamily: FONTS.display },
   keyAction: {
     width: 72,
     height: 72,

@@ -4,7 +4,7 @@ import {
   View, Text, StyleSheet, FlatList, TextInput,
   TouchableOpacity, RefreshControl, ActivityIndicator, Linking, Modal, ScrollView,
 } from 'react-native';
-import { COLORS } from '../config';
+import { COLORS, FONTS, RADIUS } from '../config';
 import { getCustomers, getCustomerDetail } from '../services/api';
 
 export default function CustomersScreen() {
@@ -130,7 +130,7 @@ export default function CustomersScreen() {
                             {new Date(a.start_time).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} — {a.stylist}
                           </Text>
                         </View>
-                        <View style={[styles.historyBadge, { backgroundColor: statusColor + '15', borderColor: statusColor + '30' }]}>
+                        <View style={[styles.historyBadge, { backgroundColor: statusColor + '15' }]}>
                           <Text style={[styles.historyBadgeText, { color: statusColor }]}>{a.status.toUpperCase()}</Text>
                         </View>
                       </View>
@@ -154,16 +154,16 @@ export default function CustomersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 20 },
   header: { paddingTop: 60, paddingBottom: 16 },
-  title: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface },
-  countText: { fontSize: 11, color: COLORS.outline, letterSpacing: 1, marginTop: 4 },
-  searchWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceContainerLow, borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 16, paddingHorizontal: 14 },
+  title: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  countText: { fontSize: 11, color: COLORS.outline, letterSpacing: 1, marginTop: 4, fontFamily: FONTS.body },
+  searchWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 16, paddingHorizontal: 14, paddingVertical: 4 },
   searchIcon: { marginRight: 10, width: 18, height: 18, justifyContent: 'center', alignItems: 'center' },
   searchCircle: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5, borderColor: COLORS.outline },
   searchHandle: { width: 1.5, height: 5, backgroundColor: COLORS.outline, position: 'absolute', bottom: 0, right: 2, transform: [{ rotate: '45deg' }] },
-  searchInput: { flex: 1, paddingVertical: 14, fontSize: 14, color: COLORS.onSurface },
+  searchInput: { flex: 1, paddingVertical: 14, fontSize: 14, color: COLORS.onSurface, fontFamily: FONTS.body },
   card: {
     backgroundColor: COLORS.surfaceContainerLow,
-    borderRadius: 12,
+    borderRadius: RADIUS.xl,
     padding: 16,
     marginBottom: 8,
     flexDirection: 'row',
@@ -178,12 +178,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 14,
   },
-  cardAvatarText: { fontSize: 18, fontWeight: '600', color: COLORS.onSurface },
+  cardAvatarText: { fontSize: 18, fontWeight: '600', color: COLORS.onSurface, fontFamily: FONTS.display },
   cardBody: { flex: 1 },
-  cardName: { fontSize: 16, fontWeight: '600', color: COLORS.onSurface },
-  cardPhone: { fontSize: 12, color: COLORS.outline, marginTop: 2 },
+  cardName: { fontSize: 16, fontWeight: '600', color: COLORS.onSurface, fontFamily: FONTS.display },
+  cardPhone: { fontSize: 12, color: COLORS.outline, marginTop: 2, fontFamily: FONTS.body },
   cardRight: { alignItems: 'center', marginRight: 12 },
-  visitLabel: { fontSize: 8, color: COLORS.outline, letterSpacing: 2 },
+  visitLabel: { fontSize: 8, color: COLORS.outline, letterSpacing: 2, fontFamily: FONTS.body },
   visitCount: { fontSize: 18, fontWeight: '700', color: COLORS.primary, marginTop: 2 },
   callBtn: {
     width: 40,
@@ -199,13 +199,13 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, color: COLORS.outline, textAlign: 'center', paddingVertical: 24 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.surfaceContainerLow, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 28, maxHeight: '85%' },
+  modalContent: { backgroundColor: COLORS.surfaceContainerLow, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: 28, maxHeight: '85%' },
   modalHandle: { width: 48, height: 4, backgroundColor: COLORS.outlineVariant + '40', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   modalProfile: { alignItems: 'center', marginBottom: 28 },
-  modalAvatarRing: { width: 80, height: 80, borderRadius: 40, padding: 3, backgroundColor: COLORS.primaryContainer, marginBottom: 16 },
-  modalAvatar: { flex: 1, borderRadius: 37, backgroundColor: COLORS.surfaceContainerHigh, justifyContent: 'center', alignItems: 'center' },
-  modalAvatarText: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface },
-  modalName: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface },
+  modalAvatarRing: { width: 80, height: 80, borderRadius: 40, padding: 3, backgroundColor: 'transparent', marginBottom: 16 },
+  modalAvatar: { flex: 1, borderRadius: 37, backgroundColor: COLORS.surfaceContainerHighest, justifyContent: 'center', alignItems: 'center' },
+  modalAvatarText: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  modalName: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
   modalMeta: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   modalPhone: { fontSize: 13, color: COLORS.outline },
   metaDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: COLORS.outlineVariant },
@@ -216,9 +216,9 @@ const styles = StyleSheet.create({
   historyTitle: { fontSize: 11, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginBottom: 12 },
   historyItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceContainerHigh, borderRadius: 12, padding: 14, marginBottom: 8 },
   historyService: { fontSize: 14, fontWeight: '500', color: COLORS.onSurface },
-  historyDate: { fontSize: 11, color: COLORS.outline, marginTop: 2 },
-  historyBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, borderWidth: 1 },
+  historyDate: { fontSize: 11, color: COLORS.outline, marginTop: 2, fontFamily: FONTS.body },
+  historyBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
   historyBadgeText: { fontSize: 8, fontWeight: '600', letterSpacing: 1 },
-  closeBtn: { paddingVertical: 16, borderRadius: 24, borderWidth: 1, borderColor: COLORS.outlineVariant + '30', alignItems: 'center', marginTop: 20 },
-  closeBtnText: { fontSize: 12, fontWeight: '600', color: COLORS.onSurface, letterSpacing: 2 },
+  closeBtn: { paddingVertical: 16, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.outlineVariant, alignItems: 'center', marginTop: 20 },
+  closeBtnText: { fontSize: 12, fontWeight: '600', color: COLORS.primary, letterSpacing: 2 },
 });

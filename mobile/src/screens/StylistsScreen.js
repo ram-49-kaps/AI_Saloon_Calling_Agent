@@ -5,7 +5,7 @@ import {
   RefreshControl, ActivityIndicator, Linking, TouchableOpacity,
   Modal, TextInput, Alert,
 } from 'react-native';
-import { COLORS } from '../config';
+import { COLORS, FONTS, RADIUS } from '../config';
 import { getStylists, updateStylist } from '../services/api';
 
 export default function StylistsScreen() {
@@ -53,7 +53,7 @@ export default function StylistsScreen() {
     <View style={[styles.card, !item.is_active && styles.cardInactive]}>
       <View style={styles.cardTop}>
         <TouchableOpacity style={styles.avatarSection} onPress={() => openEdit(item)} activeOpacity={0.7}>
-          <View style={[styles.avatarRing, !item.is_active && { borderColor: COLORS.outlineVariant + '30' }]}>
+          <View style={[styles.avatarRing, !item.is_active && { opacity: 0.5 }]}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
             </View>
@@ -168,18 +168,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 20 },
   header: { paddingTop: 60, paddingBottom: 20 },
   labelText: { fontSize: 10, color: COLORS.primary, letterSpacing: 3, marginBottom: 4 },
-  title: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface },
-  countText: { fontSize: 11, color: COLORS.outline, letterSpacing: 1, marginTop: 4 },
-  card: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12, padding: 20, marginBottom: 14 },
+  title: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  countText: { fontSize: 11, color: COLORS.outline, letterSpacing: 1, marginTop: 4, fontFamily: FONTS.body },
+  card: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.lg, padding: 20, marginBottom: 14 },
   cardInactive: { opacity: 0.45 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   avatarSection: { flexDirection: 'row', gap: 14, alignItems: 'center', flex: 1 },
-  avatarRing: { width: 56, height: 56, borderRadius: 12, borderWidth: 2, borderColor: COLORS.primary + '30', padding: 3, overflow: 'hidden' },
+  avatarRing: { width: 56, height: 56, borderRadius: 12, padding: 3, overflow: 'hidden', backgroundColor: 'transparent' },
   avatar: { flex: 1, borderRadius: 9, backgroundColor: COLORS.surfaceContainerHighest, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 20, fontWeight: '700', color: COLORS.onSurface },
-  cardName: { fontSize: 18, fontWeight: '500', color: COLORS.onSurface },
-  cardPhone: { fontSize: 13, color: COLORS.primary, marginTop: 4 },
-  editHint: { fontSize: 9, color: COLORS.outline, marginTop: 2, letterSpacing: 0.5 },
+  avatarText: { fontSize: 20, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  cardName: { fontSize: 18, fontWeight: '500', color: COLORS.onSurface, fontFamily: FONTS.display },
+  cardPhone: { fontSize: 13, color: COLORS.primary, marginTop: 4, fontFamily: FONTS.body },
+  editHint: { fontSize: 9, color: COLORS.outline, marginTop: 2, letterSpacing: 0.5, fontFamily: FONTS.body },
   tagRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 16 },
   tag: { backgroundColor: COLORS.surfaceContainerHighest, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 24 },
   tagText: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2 },
@@ -188,17 +188,17 @@ const styles = StyleSheet.create({
   loadValue: { fontSize: 18, fontWeight: '500', color: COLORS.primary, marginTop: 2 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.surfaceContainer, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 28 },
+  modalContent: { backgroundColor: COLORS.surfaceContainer, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: 28 },
   modalHandle: { width: 48, height: 4, backgroundColor: COLORS.outlineVariant + '40', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.onSurface, marginBottom: 24 },
-  fieldLabel: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginBottom: 6 },
+  modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.onSurface, marginBottom: 24, fontFamily: FONTS.display },
+  fieldLabel: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginBottom: 6, fontFamily: FONTS.body },
   fieldInput: {
-    backgroundColor: COLORS.surfaceContainerLow, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: COLORS.onSurface, borderWidth: 1, borderColor: COLORS.outlineVariant + '20', marginBottom: 16,
+    backgroundColor: 'transparent', paddingVertical: 12,
+    fontSize: 15, color: COLORS.onSurface, borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 16, fontFamily: FONTS.body,
   },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  modalCancelBtn: { flex: 1, paddingVertical: 16, borderRadius: 24, borderWidth: 1, borderColor: COLORS.outlineVariant + '30', alignItems: 'center' },
+  modalCancelBtn: { flex: 1, paddingVertical: 16, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.outlineVariant + '30', alignItems: 'center' },
   modalCancelText: { fontSize: 11, fontWeight: '600', color: COLORS.onSurfaceVariant, letterSpacing: 2 },
-  modalSaveBtn: { flex: 1, paddingVertical: 16, borderRadius: 24, backgroundColor: COLORS.primaryContainer, alignItems: 'center' },
+  modalSaveBtn: { flex: 1, paddingVertical: 16, borderRadius: RADIUS.xl, backgroundColor: COLORS.primaryContainer, alignItems: 'center' },
   modalSaveText: { fontSize: 11, fontWeight: '700', color: COLORS.onPrimary, letterSpacing: 2 },
 });

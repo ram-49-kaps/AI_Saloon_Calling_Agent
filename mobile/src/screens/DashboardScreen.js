@@ -5,7 +5,7 @@ import {
   Dimensions, ActivityIndicator,
 } from 'react-native';
 import { BarChart, LineChart } from 'react-native-chart-kit';
-import { COLORS } from '../config';
+import { COLORS, FONTS, RADIUS } from '../config';
 import { getDashboard } from '../services/api';
 
 const { width } = Dimensions.get('window');
@@ -227,18 +227,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 20 },
   loadingContainer: { flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center' },
   header: { paddingTop: 60, paddingBottom: 24 },
-  greeting: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface },
-  dateText: { fontSize: 10, color: COLORS.onSurfaceVariant + '99', letterSpacing: 3, marginTop: 6 },
+  greeting: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  dateText: { fontSize: 10, color: COLORS.onSurfaceVariant + '99', letterSpacing: 3, marginTop: 6, fontFamily: FONTS.body },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  statCard: { flex: 1, backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12, padding: 20 },
+  statCard: { flex: 1, backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.xl, padding: 20 },
   statIconRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   statIconBox: { width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
   statBadge: { fontSize: 9, color: COLORS.onSurfaceVariant + '80', letterSpacing: 1 },
-  statLabel: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 1.5, marginTop: 4 },
-  statNumber: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface },
-  chartCard: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12, padding: 20, marginBottom: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16 },
-  labelTitle: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginBottom: 16 },
+  statLabel: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 1.5, marginTop: 4, fontFamily: FONTS.body },
+  statNumber: { fontSize: 28, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  chartCard: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.xl, padding: 20, marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: COLORS.onSurface, marginBottom: 16, fontFamily: FONTS.display },
+  labelTitle: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginBottom: 16, fontFamily: FONTS.body },
   legendRow: { flexDirection: 'row', gap: 16, marginBottom: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 6, height: 6, borderRadius: 3 },
@@ -252,8 +252,8 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 2 },
   apptCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12,
-    padding: 12, marginBottom: 8, gap: 12,
+    backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.lg,
+    padding: 12, marginBottom: 12, gap: 12,
   },
   apptAvatar: {
     width: 44, height: 44, borderRadius: 22,

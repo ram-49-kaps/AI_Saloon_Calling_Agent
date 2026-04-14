@@ -4,7 +4,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Alert, ActivityIndicator, Switch, Modal, TextInput,
 } from 'react-native';
-import { COLORS } from '../config';
+import { COLORS, FONTS, RADIUS } from '../config';
 import { getServices, updateService, clearToken, wipeDatabase } from '../services/api';
 
 export default function SettingsScreen({ onLogout }) {
@@ -87,8 +87,8 @@ export default function SettingsScreen({ onLogout }) {
       {/* App Info Bento */}
       <View style={styles.bentoRow}>
         <View style={styles.bentoLarge}>
-          <Text style={styles.appTitle}>Elite Salon Admin</Text>
-          <Text style={styles.appVersion}>SYSTEM VERSION 1.0.0</Text>
+          <Text style={styles.appTitle}>Daxx Saloon</Text>
+          <Text style={styles.appVersion}>AI AGENT SYSTEM v1.0</Text>
           <View style={styles.statusPill}>
             <View style={styles.statusDotGreen} />
             <Text style={styles.statusOnline}>SYSTEM ONLINE</Text>
@@ -230,71 +230,70 @@ export default function SettingsScreen({ onLogout }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 20 },
   header: { paddingTop: 60, paddingBottom: 24 },
-  labelText: { fontSize: 10, color: COLORS.primary, letterSpacing: 3, marginBottom: 4 },
-  title: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface },
+  labelText: { fontSize: 10, color: COLORS.primary, letterSpacing: 3, marginBottom: 4, fontFamily: FONTS.body },
+  title: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
   bentoRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
-  bentoLarge: { flex: 2, backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12, padding: 24 },
-  appTitle: { fontSize: 20, fontWeight: '700', color: COLORS.onSurface },
-  appVersion: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4 },
+  bentoLarge: { flex: 2, backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.xl, padding: 24 },
+  appTitle: { fontSize: 20, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  appVersion: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4, fontFamily: FONTS.body },
   statusPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: COLORS.surfaceContainerHigh, paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 24, alignSelf: 'flex-start', marginTop: 20,
-    borderWidth: 1, borderColor: COLORS.outlineVariant + '15',
+    borderRadius: RADIUS.xl, alignSelf: 'flex-start', marginTop: 20,
   },
   statusDotGreen: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 6 },
   statusOnline: { fontSize: 9, color: COLORS.primary, letterSpacing: 1 },
-  bentoSmall: { flex: 1, backgroundColor: COLORS.primary, borderRadius: 12, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  bentoSmall: { flex: 1, backgroundColor: COLORS.primary, borderRadius: RADIUS.xl, padding: 20, justifyContent: 'center', alignItems: 'center' },
   cloudIcon: { width: 36, height: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   cloudBody: { width: 28, height: 14, borderRadius: 7, backgroundColor: COLORS.onPrimary + '30', borderWidth: 2, borderColor: COLORS.onPrimary },
   cloudCheckmark: { width: 8, height: 4, borderBottomWidth: 2, borderLeftWidth: 2, borderColor: COLORS.onPrimary, transform: [{ rotate: '-45deg' }], position: 'absolute', bottom: 6 },
-  syncText: { fontSize: 14, fontStyle: 'italic', color: COLORS.onPrimary, textAlign: 'center', lineHeight: 18 },
+  syncText: { fontSize: 14, fontStyle: 'italic', color: COLORS.onPrimary, textAlign: 'center', lineHeight: 18, fontFamily: FONTS.display },
   section: { marginBottom: 28 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.onSurface },
-  sectionSub: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  sectionSub: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4, fontFamily: FONTS.body },
   serviceRow: {
-    backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12, padding: 16,
-    flexDirection: 'row', alignItems: 'center', marginBottom: 8,
+    backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.lg, padding: 16,
+    flexDirection: 'row', alignItems: 'center', marginBottom: 14,
   },
-  serviceName: { fontSize: 16, fontWeight: '500', color: COLORS.onSurface },
+  serviceName: { fontSize: 16, fontWeight: '500', color: COLORS.onSurface, fontFamily: FONTS.display },
   serviceMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  serviceMetaText: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2 },
+  serviceMetaText: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2, fontFamily: FONTS.body },
   metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: COLORS.outlineVariant },
   servicePrice: { fontSize: 13, fontStyle: 'italic', fontWeight: '700', color: COLORS.primary },
-  editHint: { fontSize: 9, color: COLORS.outline, marginTop: 4, letterSpacing: 0.5 },
-  accountSection: { borderTopWidth: 1, borderTopColor: COLORS.outlineVariant + '15', paddingTop: 24, marginBottom: 20 },
-  accountCard: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: COLORS.outlineVariant + '08', marginTop: 12 },
-  dangerCard: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: COLORS.error + '40', marginTop: 12 },
+  editHint: { fontSize: 9, color: COLORS.outline, marginTop: 4, letterSpacing: 0.5, fontFamily: FONTS.body },
+  accountSection: { paddingTop: 24, marginBottom: 20 },
+  accountCard: { backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.xl, padding: 20, marginTop: 12 },
+  dangerCard: { backgroundColor: COLORS.errorContainer + '10', borderRadius: RADIUS.xl, padding: 20, marginTop: 12 },
   accountInfo: { marginBottom: 20 },
-  accountName: { fontSize: 16, fontWeight: '500', color: COLORS.onSurface },
-  accountRole: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4 },
+  accountName: { fontSize: 16, fontWeight: '500', color: COLORS.onSurface, fontFamily: FONTS.display },
+  accountRole: { fontSize: 9, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4, fontFamily: FONTS.body },
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    padding: 16, backgroundColor: COLORS.surfaceContainerHighest, borderWidth: 1,
-    borderColor: COLORS.outlineVariant + '40', borderRadius: 12,
+    padding: 16, backgroundColor: COLORS.surfaceContainerHighest,
+    borderRadius: RADIUS.lg,
   },
   logoutText: { fontSize: 10, fontWeight: '700', color: COLORS.onSurface, letterSpacing: 2 },
   wipeBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    padding: 16, backgroundColor: COLORS.errorContainer + '25', borderWidth: 1,
-    borderColor: COLORS.errorContainer + '40', borderRadius: 12,
+    padding: 16, backgroundColor: COLORS.errorContainer + '25',
+    borderRadius: RADIUS.lg,
   },
   wipeText: { fontSize: 10, fontWeight: '700', color: COLORS.error, letterSpacing: 2 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.surfaceContainer, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 28 },
+  modalContent: { backgroundColor: COLORS.surfaceContainer, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: 28 },
   modalHandle: { width: 48, height: 4, backgroundColor: COLORS.outlineVariant + '40', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.onSurface, marginBottom: 24 },
-  fieldLabel: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginBottom: 6 },
+  modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.onSurface, marginBottom: 24, fontFamily: FONTS.display },
+  fieldLabel: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginBottom: 6, fontFamily: FONTS.body },
   fieldInput: {
-    backgroundColor: COLORS.surfaceContainerLow, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: COLORS.onSurface, borderWidth: 1, borderColor: COLORS.outlineVariant + '20', marginBottom: 16,
+    backgroundColor: 'transparent', paddingVertical: 12,
+    fontSize: 15, color: COLORS.onSurface, borderBottomWidth: 1, borderBottomColor: COLORS.outlineVariant, marginBottom: 16, fontFamily: FONTS.body,
   },
   fieldRow: { flexDirection: 'row' },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  modalCancelBtn: { flex: 1, paddingVertical: 16, borderRadius: 24, borderWidth: 1, borderColor: COLORS.outlineVariant + '30', alignItems: 'center' },
+  modalCancelBtn: { flex: 1, paddingVertical: 16, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.outlineVariant + '30', alignItems: 'center' },
   modalCancelText: { fontSize: 11, fontWeight: '600', color: COLORS.onSurfaceVariant, letterSpacing: 2 },
-  modalSaveBtn: { flex: 1, paddingVertical: 16, borderRadius: 24, backgroundColor: COLORS.primaryContainer, alignItems: 'center' },
+  modalSaveBtn: { flex: 1, paddingVertical: 16, borderRadius: RADIUS.xl, backgroundColor: COLORS.primaryContainer, alignItems: 'center' },
   modalSaveText: { fontSize: 11, fontWeight: '700', color: COLORS.onPrimary, letterSpacing: 2 },
 });

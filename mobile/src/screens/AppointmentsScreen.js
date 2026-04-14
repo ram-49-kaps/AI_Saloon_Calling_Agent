@@ -4,7 +4,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Alert, Linking,
 } from 'react-native';
-import { COLORS } from '../config';
+import { COLORS, RADIUS, FONTS } from '../config';
 import { getAppointments, updateAppointment } from '../services/api';
 
 const STATUS_CONFIG = {
@@ -54,7 +54,7 @@ export default function AppointmentsScreen() {
     const isDimmed = item.status === 'completed' || item.status === 'cancelled';
 
     return (
-      <View style={[styles.card, { borderLeftColor: config.borderColor, opacity: isDimmed ? 0.5 : 1 }]}>
+      <View style={[styles.card, { opacity: isDimmed ? 0.5 : 1 }]}>
         <View style={styles.cardHeader}>
           <View style={{ flex: 1 }}>
             <TouchableOpacity onPress={() => Linking.openURL(`tel:${item.customer_phone}`)}>
@@ -151,25 +151,25 @@ export default function AppointmentsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 20 },
   header: { paddingTop: 60, paddingBottom: 20 },
-  title: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface },
-  countText: { fontSize: 11, color: COLORS.outline, letterSpacing: 1, marginTop: 4 },
+  title: { fontSize: 32, fontWeight: '700', color: COLORS.onSurface, fontFamily: FONTS.display },
+  countText: { fontSize: 11, color: COLORS.outline, letterSpacing: 1, marginTop: 4, fontFamily: FONTS.body },
   filterRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  chip: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24, backgroundColor: COLORS.surfaceContainerHigh, borderWidth: 1, borderColor: COLORS.outlineVariant + '15' },
-  chipActive: { backgroundColor: COLORS.primaryContainer },
-  chipText: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2 },
+  chip: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24, backgroundColor: COLORS.surfaceContainerHigh },
+  chipActive: { backgroundColor: COLORS.primary },
+  chipText: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, fontFamily: FONTS.body },
   chipTextActive: { color: COLORS.onPrimary, fontWeight: '700' },
   statusFilters: { flexDirection: 'row', gap: 16, marginBottom: 20 },
   statusFilter: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 4 },
-  statusFilterActive: { borderBottomWidth: 2, borderBottomColor: COLORS.primary },
-  statusFilterDot: { width: 8, height: 8, borderRadius: 4 },
-  statusFilterText: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 1.5 },
+  statusFilterActive: { opacity: 1 },
+  statusFilterDot: { width: 8, height: 8, borderRadius: 4, shadowColor: COLORS.primary, shadowOpacity: 0.8, shadowRadius: 6, shadowOffset: { width: 0, height: 0 } },
+  statusFilterText: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 1.5, fontFamily: FONTS.body },
   card: {
-    backgroundColor: COLORS.surfaceContainerLow, borderRadius: 12,
-    padding: 20, marginBottom: 12, borderLeftWidth: 4,
+    backgroundColor: COLORS.surfaceContainerLow, borderRadius: RADIUS.lg,
+    padding: 20, marginBottom: 12,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  cardName: { fontSize: 18, fontWeight: '500', color: COLORS.onSurface },
-  cardService: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4 },
+  cardName: { fontSize: 18, fontWeight: '500', color: COLORS.onSurface, fontFamily: FONTS.display },
+  cardService: { fontSize: 10, color: COLORS.onSurfaceVariant, letterSpacing: 2, marginTop: 4, fontFamily: FONTS.body },
   priceBlock: { alignItems: 'flex-end' },
   cardPrice: { fontSize: 16, fontWeight: '500', color: COLORS.primary },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
