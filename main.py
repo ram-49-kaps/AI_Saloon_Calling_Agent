@@ -15,19 +15,17 @@ from routes.admin import router as admin_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: create tables + seed data. Shutdown: close DB engine."""
-    print("🚀 Starting Salon Booking AI Agent...")
+    print("🚀 Starting Salon Booking AI Agent...", flush=True)
     try:
         from init_db import init_db
         await init_db()
-        print("✅ Database ready")
+        print("✅ Database ready", flush=True)
     except Exception as e:
-        import traceback
-        print("❌ DATABASE INITIALIZATION FAILED:")
-        traceback.print_exc()
+        print(f"❌ DATABASE INITIALIZATION FAILED: {type(e).__name__} - {str(e)}", flush=True)
     yield
     try:
         await close_engine()
-        print("👋 Shutdown complete")
+        print("👋 Shutdown complete", flush=True)
     except Exception:
         pass
 
