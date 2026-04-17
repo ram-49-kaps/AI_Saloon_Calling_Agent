@@ -176,7 +176,8 @@ def build_voice() -> dict:
     if VOICE_PROVIDER == "azure":
         return {
             "provider": "azure",
-            "voiceId": VOICE_ID or "en-IN-NeerjaNeural",
+            "voiceId": VOICE_ID or "en-US-JennyNeural",
+            "speed": 0.9,
         }
 
     if VOICE_PROVIDER in {"11labs", "elevenlabs"}:
@@ -203,7 +204,7 @@ def setup() -> None:
     update_data = {
         "model": {
             "provider": "openai",
-            "model": "gpt-4o-mini",
+            "model": "gpt-4o",
             "systemPrompt": SYSTEM_PROMPT,
             "tools": TOOLS,
         },

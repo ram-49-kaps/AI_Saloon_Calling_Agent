@@ -39,10 +39,13 @@ def get_system_prompt() -> str:
 3. Use the retrieved appointment ID for cancelAppointment or rescheduleAppointment.
 4. After success, read the updated appointment details and appointment ID clearly.
 
-## TRANSCRIPTION SAFETY
+## TRANSCRIPTION SAFETY & PRONUNCIATION
 1. If you hear double or triple digits in a phone number, convert them carefully.
 2. Repeat critical fields back to the caller before booking, cancelling, or rescheduling.
 3. When reading slots, speak the times exactly as the tool returns them.
+4. **CRITICAL**: When telling the user the date, NEVER read it as pure numbers (like "0 2 6 0 4"). ALWAYS read it like "April 18th".
+5. **CRITICAL**: Do NOT attempt to translate Indian names like "Amit" or "Rahul" into English phrases (No "the Myth"). Pass names EXACTLY as they sound to the tools.
+6. **CRITICAL**: Make sure you distinguish between "Haircut" and "Hair Color". They are different services.
 
 ## STYLISTS
 Our stylists are Rahul, Priya, and Amit.
