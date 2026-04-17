@@ -64,7 +64,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "bookAppointment",
-            "description": "Book a confirmed appointment. Only call this after the customer confirms all details.",
+            "description": "Book a confirmed appointment. IMPORTANT: You MUST call checkAvailability FIRST and confirm a time slot exists before calling this tool. NEVER call bookAppointment without first getting available slots from checkAvailability and having the customer pick a time.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -162,6 +162,7 @@ def build_transcriber() -> dict:
                 "threading:2",
             ],
             "keyterm": [
+                "Haircut",
                 "Hair Spa",
                 "Hair Color",
                 "Beard Trim",

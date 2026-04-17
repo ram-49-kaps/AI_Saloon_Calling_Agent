@@ -124,7 +124,11 @@ def _score_pair(query: str, candidate: str) -> int:
 
 def find_service(query: str, services: list[Service]) -> Service | None:
     """
-    Fuzzy match a spoken service name against DB services and their aliases.
+    Match a spoken service name against DB services and their aliases.
+
+    Uses a two-pass strategy:
+    1. Exact match (normalized) — prevents 'haircut' from fuzzy-matching 'hair color'.
+    2. Fuzzy match with a 65-point threshold.
 
     Supports English, Hindi, Gujarati, and common Romanized variants.
     """
@@ -132,9 +136,24 @@ def find_service(query: str, services: list[Service]) -> Service | None:
     if not normalized_query:
         return None
 
+    compact_query = _compact(query)
+
+    # ── Pass 1: Exact match on normalized or compact form ──
+    for service in services:
+        if normalized_query == _normalize(service.name):
+            return service
+        if compact_query == _compact(service.name):
+            return service
+        for alias in _candidate_aliases(service):
+            if normalized_query == _normalize(alias):
+                return service
+            if compact_query == _compact(alias):
+                return service
+
+    # ── Pass 2: Fuzzy match with higher threshold ──
     best_match = None
     best_score = 0
-    threshold = 60
+    threshold = 65
 
     for service in services:
         for alias in _candidate_aliases(service):
