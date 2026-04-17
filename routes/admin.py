@@ -468,3 +468,142 @@ async def wipe_database(db: AsyncSession = Depends(get_db)):
     await db.execute(delete(Customer))
     await db.flush()
     return {"success": True, "message": "Database wiped successfully"}
+
+
+# ─── CALL ANALYTICS ──────────────────────────────────────
+
+@router.get("/call-analytics", dependencies=[Depends(require_admin)])
+async def get_call_analytics(
+    days: int = Query(7, description="Number of days to look back"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Call performance analytics — booking success rate, avg duration,
+    feedback ratings, and improvement insights.
+    """
+    from models.call_log import CallLog
+
+    cutoff = datetime.now(IST) - timedelta(days=days)
+
+    # Total calls
+    total_result = await db.execute(
+        select(func.count(CallLog.id)).where(CallLog.created_at >= cutoff)
+    )
+    total_calls = total_result.scalar() or 0
+
+    # Successful bookings
+    success_result = await db.execute(
+        select(func.count(CallLog.id)).where(
+            and_(CallLog.created_at >= cutoff, CallLog.booking_succeeded == True)
+        )
+    )
+    successful_bookings = success_result.scalar() or 0
+
+    # Average duration
+    avg_dur_result = await db.execute(
+        select(func.avg(CallLog.duration_seconds)).where(CallLog.created_at >= cutoff)
+    )
+    avg_duration = round(float(avg_dur_result.scalar() or 0), 1)
+
+    # Average rating (only rated calls)
+    avg_rating_result = await db.execute(
+        select(func.avg(CallLog.feedback_rating)).where(
+            and_(CallLog.created_at >= cutoff, CallLog.feedback_rating.isnot(None))
+        )
+    )
+    avg_rating = round(float(avg_rating_result.scalar() or 0), 1)
+
+    # Rating distribution
+    rated_result = await db.execute(
+        select(func.count(CallLog.id)).where(
+            and_(CallLog.created_at >= cutoff, CallLog.feedback_rating.isnot(None))
+        )
+    )
+    total_rated = rated_result.scalar() or 0
+
+    # Average tool calls per conversation
+    avg_tools_result = await db.execute(
+        select(func.avg(CallLog.tool_calls_count)).where(CallLog.created_at >= cutoff)
+    )
+    avg_tool_calls = round(float(avg_tools_result.scalar() or 0), 1)
+
+    # Calls with errors
+    error_result = await db.execute(
+        select(func.count(CallLog.id)).where(
+            and_(CallLog.created_at >= cutoff, CallLog.tool_errors_count > 0)
+        )
+    )
+    calls_with_errors = error_result.scalar() or 0
+
+    # Total cost
+    cost_result = await db.execute(
+        select(func.sum(CallLog.cost)).where(CallLog.created_at >= cutoff)
+    )
+    total_cost = round(float(cost_result.scalar() or 0), 2)
+
+    booking_rate = round((successful_bookings / total_calls * 100), 1) if total_calls > 0 else 0
+
+    return {
+        "period_days": days,
+        "total_calls": total_calls,
+        "successful_bookings": successful_bookings,
+        "booking_success_rate": booking_rate,
+        "avg_duration_seconds": avg_duration,
+        "avg_feedback_rating": avg_rating,
+        "total_rated_calls": total_rated,
+        "avg_tool_calls": avg_tool_calls,
+        "calls_with_errors": calls_with_errors,
+        "total_cost": total_cost,
+    }
+
+
+@router.get("/call-logs", dependencies=[Depends(require_admin)])
+async def get_call_logs(
+    limit: int = Query(20, ge=1, le=100),
+    rating_max: int = Query(None, description="Filter calls with rating <= this value"),
+    only_failed: bool = Query(False, description="Only show calls where booking failed"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get recent call logs with transcripts.
+    Use rating_max=2 to find poorly-rated calls for prompt improvement.
+    Use only_failed=true to find calls where the booking didn't happen.
+    """
+    from models.call_log import CallLog
+
+    query = select(CallLog).order_by(CallLog.created_at.desc())
+
+    if rating_max is not None:
+        query = query.where(
+            and_(CallLog.feedback_rating.isnot(None), CallLog.feedback_rating <= rating_max)
+        )
+
+    if only_failed:
+        query = query.where(CallLog.booking_succeeded == False)
+
+    query = query.limit(limit)
+    result = await db.execute(query)
+    logs = result.scalars().all()
+
+    return {
+        "call_logs": [
+            {
+                "id": log.id,
+                "vapi_call_id": log.vapi_call_id,
+                "phone_number": log.phone_number,
+                "duration_seconds": log.duration_seconds,
+                "cost": log.cost,
+                "ended_reason": log.ended_reason,
+                "transcript": log.transcript,
+                "summary": log.summary,
+                "booking_succeeded": log.booking_succeeded,
+                "tool_calls_count": log.tool_calls_count,
+                "tool_errors_count": log.tool_errors_count,
+                "feedback_rating": log.feedback_rating,
+                "call_started_at": log.call_started_at.isoformat() if log.call_started_at else None,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log in logs
+        ],
+        "total": len(logs),
+    }
