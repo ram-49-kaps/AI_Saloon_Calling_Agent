@@ -22,7 +22,7 @@ TRANSCRIBER_PROVIDER = os.getenv("VAPI_TRANSCRIBER_PROVIDER", "deepgram").strip(
 TRANSCRIBER_MODEL = os.getenv("VAPI_TRANSCRIBER_MODEL", "").strip()
 TRANSCRIBER_LANGUAGE = os.getenv("VAPI_TRANSCRIBER_LANGUAGE", "").strip()
 
-VOICE_PROVIDER = os.getenv("VAPI_VOICE_PROVIDER", "azure").strip().lower()
+VOICE_PROVIDER = os.getenv("VAPI_VOICE_PROVIDER", "11labs").strip().lower()
 VOICE_ID = os.getenv("VAPI_VOICE_ID", "").strip()
 
 
@@ -185,6 +185,9 @@ def build_voice() -> dict:
         return {
             "provider": "11labs",
             "voiceId": VOICE_ID or "21m00Tcm4TlvDq8ikWAM",
+            "stability": 0.5,
+            "similarityBoost": 0.75,
+            "speed": 0.9,
         }
 
     raise ValueError(f"Unsupported VAPI_VOICE_PROVIDER: {VOICE_PROVIDER}")
@@ -211,7 +214,7 @@ def setup() -> None:
         },
         "voice": voice,
         "transcriber": transcriber,
-        "firstMessage": "Hello! Welcome to our salon. How can I help you today?",
+        "firstMessage": "Hi there! Welcome to our salon — how can I help you today?",
         "firstMessageMode": "assistant-speaks-first",
         "serverUrl": SERVER_URL,
         "startSpeakingPlan": {
