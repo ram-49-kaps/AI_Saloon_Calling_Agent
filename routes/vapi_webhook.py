@@ -38,6 +38,17 @@ async def vapi_webhook(
 
     logger.info(f"Vapi webhook received: type={msg_type}")
 
+    if msg_type == "assistant-request":
+        from utils.prompt import get_system_prompt
+        logger.info("Serving dynamic assistant-request response with current date.")
+        return {
+            "assistant": {
+                "model": {
+                    "systemPrompt": get_system_prompt()
+                }
+            }
+        }
+
     # Handle tool calls from the AI agent
     if msg_type == "tool-calls":
         return await _handle_tool_calls(message, db)
