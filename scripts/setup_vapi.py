@@ -142,8 +142,8 @@ def build_transcriber() -> dict:
     if TRANSCRIBER_PROVIDER == "google":
         return {
             "provider": "google",
-            "model": TRANSCRIBER_MODEL or "latest",
-            "language": TRANSCRIBER_LANGUAGE or "multilingual",
+            "model": TRANSCRIBER_MODEL or "gemini-1.5-flash",
+            "language": TRANSCRIBER_LANGUAGE or "Multilingual",
         }
 
     if TRANSCRIBER_PROVIDER == "deepgram":
@@ -176,7 +176,7 @@ def build_voice() -> dict:
     if VOICE_PROVIDER == "azure":
         return {
             "provider": "azure",
-            "voiceId": VOICE_ID or "multilingual-auto",
+            "voiceId": VOICE_ID or "en-IN-NeerjaNeural",
         }
 
     if VOICE_PROVIDER in {"11labs", "elevenlabs"}:
@@ -213,11 +213,10 @@ def setup() -> None:
         "firstMessageMode": "assistant-speaks-first",
         "serverUrl": SERVER_URL,
         "serverMessages": [
-            "assistant-request",
             "tool-calls",
             "end-of-call-report",
             "status-update",
-            "hang-up"
+            "hang"
         ]
     }
 
