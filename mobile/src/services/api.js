@@ -125,3 +125,17 @@ export async function registerDevice(expoPushToken, deviceName) {
     body: JSON.stringify({ expo_push_token: expoPushToken, device_name: deviceName }),
   });
 }
+
+// Call Analytics
+export async function getCallAnalytics(days = 7) {
+  return request(`/call-analytics?days=${days}`);
+}
+
+export async function getCallLogs(options = {}) {
+  const params = new URLSearchParams();
+  if (options.limit) params.append('limit', options.limit);
+  if (options.ratingMax) params.append('rating_max', options.ratingMax);
+  if (options.onlyFailed) params.append('only_failed', 'true');
+  const qs = params.toString();
+  return request(`/call-logs${qs ? '?' + qs : ''}`);
+}

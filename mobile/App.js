@@ -16,6 +16,7 @@ import AppointmentsScreen from './src/screens/AppointmentsScreen';
 import CustomersScreen from './src/screens/CustomersScreen';
 import StylistsScreen from './src/screens/StylistsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import CallAnalyticsScreen from './src/screens/CallAnalyticsScreen';
 
 // Configure how notifications appear when app is in foreground
 Notifications.setNotificationHandler({
@@ -29,8 +30,8 @@ Notifications.setNotificationHandler({
 const TABS = [
   { key: 'dashboard', label: 'HOME' },
   { key: 'appointments', label: 'BOOKINGS' },
+  { key: 'analytics', label: 'AI' },
   { key: 'customers', label: 'CLIENTS' },
-  { key: 'stylists', label: 'TEAM' },
   { key: 'settings', label: 'SETTINGS' },
 ];
 
@@ -80,7 +81,17 @@ const SettingsIcon = ({ color }) => (
   </View>
 );
 
-const ICONS = { dashboard: HomeIcon, appointments: BookingsIcon, customers: ClientsIcon, stylists: TeamIcon, settings: SettingsIcon };
+const AnalyticsIcon = ({ color }) => (
+  <View style={{ width: 20, height: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+    <View style={{ width: 2.5, height: 8, backgroundColor: color, borderRadius: 1 }} />
+    <View style={{ width: 2.5, height: 14, backgroundColor: color, borderRadius: 1 }} />
+    <View style={{ width: 2.5, height: 6, backgroundColor: color, borderRadius: 1 }} />
+    <View style={{ width: 2.5, height: 16, backgroundColor: color, borderRadius: 1 }} />
+    <View style={{ width: 2.5, height: 10, backgroundColor: color, borderRadius: 1 }} />
+  </View>
+);
+
+const ICONS = { dashboard: HomeIcon, appointments: BookingsIcon, analytics: AnalyticsIcon, customers: ClientsIcon, stylists: TeamIcon, settings: SettingsIcon };
 
 // Register for push notifications
 async function registerForPushNotifications() {
@@ -202,7 +213,7 @@ export default function App() {
 
   if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
 
-  const SCREEN_MAP = { dashboard: DashboardScreen, appointments: AppointmentsScreen, customers: CustomersScreen, stylists: StylistsScreen, settings: SettingsScreen };
+  const SCREEN_MAP = { dashboard: DashboardScreen, appointments: AppointmentsScreen, analytics: CallAnalyticsScreen, customers: CustomersScreen, stylists: StylistsScreen, settings: SettingsScreen };
 
   return (
     <View style={styles.container}>
