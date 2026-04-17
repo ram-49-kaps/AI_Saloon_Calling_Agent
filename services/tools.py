@@ -66,7 +66,7 @@ async def check_availability(args: dict, db: AsyncSession) -> str:
     matched_service = find_service(service_name, all_services)
     if not matched_service:
         service_list = get_service_list_for_speech(all_services)
-        return f"I couldn't find that service. We offer: {service_list}. Which one would you like?"
+        return f"Service not found. We offer: {service_list}. Which one would you like?"
 
     # Get active stylists who can do this service
     stylists_result = await db.execute(
@@ -118,13 +118,13 @@ async def check_availability(args: dict, db: AsyncSession) -> str:
             stylist_slots[stylist.name] = slots
 
     if not stylist_slots:
-        return f"Sorry, no slots available for {matched_service.name} on {target_date.strftime('%B %d')}. Would you like to try another date?"
+        return f"[SERVICE: {matched_service.name}] No slots available on {target_date.strftime('%B %d')}. Suggest another date."
 
     # If specific stylist was requested, show their slots
     if preferred_stylist and len(stylist_slots) == 1:
         name = list(stylist_slots.keys())[0]
         slots_text = format_slots_for_speech(stylist_slots[name])
-        return f"For {matched_service.name} with {name} on {target_date.strftime('%B %d')}, available slots are: {slots_text}. Which time works for you?"
+        return f"[SERVICE: {matched_service.name}] Available with {name} on {target_date.strftime('%B %d')}: {slots_text}. Ask which time."
 
     # Show combined unique slots + mention available stylists
     all_slots = []
@@ -140,7 +140,7 @@ async def check_availability(args: dict, db: AsyncSession) -> str:
 
     slots_text = format_slots_for_speech(unique_slots)
     stylist_names = ", ".join(stylist_slots.keys())
-    return f"For {matched_service.name} on {target_date.strftime('%B %d')}, available slots are: {slots_text}. Available stylists: {stylist_names}. Which time and stylist would you prefer?"
+    return f"[SERVICE: {matched_service.name}] Available on {target_date.strftime('%B %d')}: {slots_text}. Stylists: {stylist_names}. Ask which time and stylist."
 
 
 async def book_appointment(args: dict, db: AsyncSession) -> str:
