@@ -213,6 +213,10 @@ def setup() -> None:
         "firstMessage": "Hello! Welcome to our salon. How can I help you today?",
         "firstMessageMode": "assistant-speaks-first",
         "serverUrl": SERVER_URL,
+        "startSpeakingPlan": {
+            "waitSeconds": 0.8,
+            "smartEndpointingEnabled": "livekit"
+        },
         "serverMessages": [
             "tool-calls",
             "end-of-call-report",
