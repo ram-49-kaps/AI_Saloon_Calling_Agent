@@ -18,7 +18,7 @@ SERVER_URL = os.getenv(
     "https://ai-saloon-calling-agent.onrender.com/api/vapi/webhook",
 ).strip()
 
-TRANSCRIBER_PROVIDER = os.getenv("VAPI_TRANSCRIBER_PROVIDER", "google").strip().lower()
+TRANSCRIBER_PROVIDER = os.getenv("VAPI_TRANSCRIBER_PROVIDER", "deepgram").strip().lower()
 TRANSCRIBER_MODEL = os.getenv("VAPI_TRANSCRIBER_MODEL", "").strip()
 TRANSCRIBER_LANGUAGE = os.getenv("VAPI_TRANSCRIBER_LANGUAGE", "").strip()
 
@@ -142,8 +142,8 @@ def build_transcriber() -> dict:
     if TRANSCRIBER_PROVIDER == "google":
         return {
             "provider": "google",
-            "model": TRANSCRIBER_MODEL or "gemini-2.5-flash",
-            "language": TRANSCRIBER_LANGUAGE or "Multilingual",
+            "model": TRANSCRIBER_MODEL or "latest",
+            "language": TRANSCRIBER_LANGUAGE or "multilingual",
         }
 
     if TRANSCRIBER_PROVIDER == "deepgram":
