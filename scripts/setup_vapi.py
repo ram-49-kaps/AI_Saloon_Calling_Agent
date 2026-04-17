@@ -142,7 +142,7 @@ def build_transcriber() -> dict:
     if TRANSCRIBER_PROVIDER == "google":
         return {
             "provider": "google",
-            "model": TRANSCRIBER_MODEL or "gemini-1.5-flash",
+            "model": TRANSCRIBER_MODEL or "gemini-2.5-flash",
             "language": TRANSCRIBER_LANGUAGE or "Multilingual",
         }
 
