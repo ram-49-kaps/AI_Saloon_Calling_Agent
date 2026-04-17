@@ -118,6 +118,8 @@ async def send_cancellation_sms(
     customer_name: str,
     customer_phone: str,
     service_name: str,
+    date_str: str,
+    time_str: str,
     appointment_id: int,
 ) -> None:
     """Send cancellation notification to customer + owner."""
@@ -125,6 +127,7 @@ async def send_cancellation_sms(
     customer_msg = (
         f"Appointment Cancelled.\n"
         f"Service: {service_name}\n"
+        f"Date: {date_str}, {time_str}\n"
         f"ID: {appointment_id}\n"
         f"You can book again anytime by calling us."
     )
@@ -135,6 +138,44 @@ async def send_cancellation_sms(
             f"Booking Cancelled!\n"
             f"Customer: {customer_name} ({customer_phone})\n"
             f"Service: {service_name}\n"
+            f"Date: {date_str}, {time_str}\n"
             f"ID: {appointment_id}"
+        )
+        await send_sms(settings.SALON_OWNER_PHONE, owner_msg)
+
+
+async def send_reschedule_sms(
+    customer_name: str,
+    customer_phone: str,
+    service_name: str,
+    stylist_name: str,
+    old_date_str: str,
+    old_time_str: str,
+    new_date_str: str,
+    new_time_str: str,
+    old_appointment_id: int,
+    new_appointment_id: int,
+) -> None:
+    """Send reschedule notification to customer + owner."""
+
+    customer_msg = (
+        f"Appointment Rescheduled.\n"
+        f"Service: {service_name}\n"
+        f"Old: {old_date_str}, {old_time_str} (ID {old_appointment_id})\n"
+        f"New: {new_date_str}, {new_time_str}\n"
+        f"Stylist: {stylist_name}\n"
+        f"New ID: {new_appointment_id}"
+    )
+    await send_sms(customer_phone, customer_msg)
+
+    if settings.SALON_OWNER_PHONE:
+        owner_msg = (
+            f"Booking Rescheduled!\n"
+            f"Customer: {customer_name} ({customer_phone})\n"
+            f"Service: {service_name}\n"
+            f"Old: {old_date_str}, {old_time_str} (ID {old_appointment_id})\n"
+            f"New: {new_date_str}, {new_time_str}\n"
+            f"Stylist: {stylist_name}\n"
+            f"New ID: {new_appointment_id}"
         )
         await send_sms(settings.SALON_OWNER_PHONE, owner_msg)

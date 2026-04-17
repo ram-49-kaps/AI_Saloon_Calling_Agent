@@ -1,52 +1,146 @@
-"""Service matcher — fuzzy multilingual service name matching."""
+"""Service matcher — multilingual fuzzy matching with salon-specific aliases."""
+
+from __future__ import annotations
+
+import re
 
 from thefuzz import fuzz
 
 from models.service import Service
+
+_FALLBACK_ALIASES: dict[str, list[str]] = {
+    "haircut": [
+        "hair cut",
+        "haircutting",
+        "hair cutting",
+        "cutting",
+        "baal katna",
+        "baal katvana",
+        "વાલ કાપવા",
+        "વાળ કાપવા",
+        "વાલ કપાવા",
+        "વાળ કપાવા",
+        "val kapva",
+        "val kapava",
+        "hair kat",
+        "હેર કટ",
+        "હેરકટ",
+    ],
+    "hair color": [
+        "hair colour",
+        "colouring",
+        "coloring",
+        "baal rangna",
+        "વાલ રંગવા",
+        "વાળ રંગવા",
+        "val rangva",
+        "હેર કલર",
+        "હેર કલરિંગ",
+    ],
+    "facial": [
+        "face treatment",
+        "facial treatment",
+        "ફેશિયલ",
+        "ફેસિયલ",
+        "feshiyal",
+        "fesial",
+    ],
+    "manicure": [
+        "મેનિક્યોર",
+        "mani cure",
+        "nail service",
+    ],
+    "pedicure": [
+        "પેડિક્યોર",
+        "pedi cure",
+        "foot service",
+    ],
+    "hair spa": [
+        "હેર સ્પા",
+        "વાલ સ્પા",
+        "વાળ સ્પા",
+        "val spa",
+        "hair treatment",
+    ],
+    "beard trim": [
+        "દાઢી ટ્રિમ",
+        "daadhi trim",
+        "beard",
+        "shaving",
+        "trim",
+    ],
+    "threading": [
+        "થ્રેડિંગ",
+        "થ્રેડીંગ",
+        "eyebrow",
+        "eyebrow threading",
+    ],
+}
+
+
+def _normalize(value: str) -> str:
+    """Normalize text for matching across scripts and ASR variations."""
+    value = value.strip().lower()
+    value = re.sub(r"[^\w\s\u0900-\u097f\u0a80-\u0aff]", " ", value)
+    return " ".join(value.split())
+
+
+def _compact(value: str) -> str:
+    """Remove spacing so split words like 'hair cut' and 'હેર કટ' still compare well."""
+    return _normalize(value).replace(" ", "")
+
+
+def _candidate_aliases(service: Service) -> list[str]:
+    """Return DB aliases plus hard-coded salon-specific variants."""
+    key = _normalize(service.name)
+    aliases = [service.name, *(service.aliases or []), *(_FALLBACK_ALIASES.get(key, []))]
+
+    deduped: list[str] = []
+    seen = set()
+    for alias in aliases:
+        normalized = _normalize(alias)
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            deduped.append(alias)
+    return deduped
+
+
+def _score_pair(query: str, candidate: str) -> int:
+    """Score a query against one candidate phrase using multiple fuzzy strategies."""
+    normalized_query = _normalize(query)
+    normalized_candidate = _normalize(candidate)
+    compact_query = _compact(query)
+    compact_candidate = _compact(candidate)
+
+    return max(
+        fuzz.ratio(normalized_query, normalized_candidate),
+        fuzz.partial_ratio(normalized_query, normalized_candidate),
+        fuzz.token_sort_ratio(normalized_query, normalized_candidate),
+        fuzz.token_set_ratio(normalized_query, normalized_candidate),
+        fuzz.ratio(compact_query, compact_candidate),
+        fuzz.partial_ratio(compact_query, compact_candidate),
+    )
 
 
 def find_service(query: str, services: list[Service]) -> Service | None:
     """
     Fuzzy match a spoken service name against DB services and their aliases.
 
-    Supports English, Hindi, and Gujarati through alias matching.
-    Uses thefuzz library with a 60% threshold for flexible matching.
-
-    Args:
-        query: The service name spoken by the customer (any language).
-        services: List of Service objects from the database.
-
-    Returns:
-        Best matching Service, or None if no match above threshold.
+    Supports English, Hindi, Gujarati, and common Romanized variants.
     """
-    query = query.strip().lower()
+    normalized_query = _normalize(query)
+    if not normalized_query:
+        return None
+
     best_match = None
     best_score = 0
-    threshold = 60  # Match score threshold
+    threshold = 60
 
     for service in services:
-        # Check against main name
-        score = fuzz.ratio(query, service.name.lower())
-        if score > best_score:
-            best_score = score
-            best_match = service
-
-        # Also try partial ratio for substring matches (e.g., "hair" matches "haircut")
-        partial_score = fuzz.partial_ratio(query, service.name.lower())
-        if partial_score > best_score:
-            best_score = partial_score
-            best_match = service
-
-        # Check against all aliases (Hindi, Gujarati, etc.)
-        for alias in (service.aliases or []):
-            alias_score = fuzz.ratio(query, alias.lower())
-            if alias_score > best_score:
-                best_score = alias_score
-                best_match = service
-
-            partial_alias_score = fuzz.partial_ratio(query, alias.lower())
-            if partial_alias_score > best_score:
-                best_score = partial_alias_score
+        for alias in _candidate_aliases(service):
+            score = _score_pair(normalized_query, alias)
+            if score > best_score:
+                best_score = score
                 best_match = service
 
     if best_score >= threshold:
@@ -58,6 +152,6 @@ def find_service(query: str, services: list[Service]) -> Service | None:
 def get_service_list_for_speech(services: list[Service]) -> str:
     """Format all services into a voice-friendly list for the AI to speak."""
     lines = []
-    for s in services:
-        lines.append(f"{s.name} ({s.duration} minutes, ₹{int(s.price)})")
+    for service in services:
+        lines.append(f"{service.name} ({service.duration} minutes, ₹{int(service.price)})")
     return ", ".join(lines)

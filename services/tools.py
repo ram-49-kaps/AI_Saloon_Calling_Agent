@@ -13,8 +13,17 @@ from models.appointment import Appointment
 from models.customer import Customer
 from utils.service_match import find_service, get_service_list_for_speech
 from utils.slot_generator import generate_available_slots, format_slots_for_speech
-from services.sms_service import send_booking_confirmation_sms
+from services.email_service import (
+    send_booking_notification_email,
+    send_cancellation_notification_email,
+    send_reschedule_notification_email,
+)
 from services.push_service import send_admin_push_notification
+from services.sms_service import (
+    send_booking_confirmation_sms,
+    send_cancellation_sms,
+    send_reschedule_sms,
+)
 
 
 def find_stylist_by_name(name: str, stylists: list) -> Stylist | None:
@@ -300,6 +309,17 @@ async def book_appointment(args: dict, db: AsyncSession) -> str:
         price=matched_service.price,
     )
 
+    await send_booking_notification_email(
+        customer_name=customer_name,
+        customer_phone=phone,
+        service_name=matched_service.name,
+        stylist_name=best_stylist.name,
+        date_str=display_date,
+        time_str=display_time,
+        appointment_id=appointment.id,
+        price=matched_service.price,
+    )
+
     # Send push notification to admin
     await send_admin_push_notification(
         db=db,
@@ -383,8 +403,32 @@ async def cancel_appointment(args: dict, db: AsyncSession) -> str:
     appointment.status = "cancelled"
     await db.flush()
 
-    display_time = appointment.start_time.strftime("%-I:%M %p on %B %d")
-    return f"Your appointment at {display_time} has been cancelled successfully."
+    service_result = await db.execute(select(Service).where(Service.id == appointment.service_id))
+    service = service_result.scalar_one_or_none()
+    service_name = service.name if service else "Service"
+
+    display_date = appointment.start_time.strftime("%B %d")
+    display_time = appointment.start_time.strftime("%-I:%M %p")
+
+    await send_cancellation_sms(
+        customer_name=appointment.customer_name,
+        customer_phone=appointment.customer_phone,
+        service_name=service_name,
+        date_str=display_date,
+        time_str=display_time,
+        appointment_id=appointment.id,
+    )
+
+    await send_cancellation_notification_email(
+        customer_name=appointment.customer_name,
+        customer_phone=appointment.customer_phone,
+        service_name=service_name,
+        date_str=display_date,
+        time_str=display_time,
+        appointment_id=appointment.id,
+    )
+
+    return f"Your appointment for {service_name} on {display_date} at {display_time} has been cancelled successfully."
 
 
 async def reschedule_appointment(args: dict, db: AsyncSession) -> str:
@@ -425,6 +469,10 @@ async def reschedule_appointment(args: dict, db: AsyncSession) -> str:
     except (ValueError, TypeError):
         return "I couldn't understand the new time. Could you tell me again?"
 
+    now = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+    if new_start < now:
+        return "That new time has already passed. Could you choose a future time?"
+
     # Get service for duration
     svc_result = await db.execute(select(Service).where(Service.id == old_appointment.service_id))
     service = svc_result.scalar_one_or_none()
@@ -451,6 +499,13 @@ async def reschedule_appointment(args: dict, db: AsyncSession) -> str:
     for stylist in stylists:
         day_of_week = target_date.isoweekday() % 7
         if day_of_week in (stylist.days_off or []):
+            continue
+
+        work_start_h, work_start_m = map(int, stylist.work_start.split(":"))
+        work_end_h, work_end_m = map(int, stylist.work_end.split(":"))
+        if new_start.hour < work_start_h or (new_start.hour == work_start_h and new_start.minute < work_start_m):
+            continue
+        if new_end.hour > work_end_h or (new_end.hour == work_end_h and new_end.minute > work_end_m):
             continue
 
         # Check overlap
@@ -502,9 +557,39 @@ async def reschedule_appointment(args: dict, db: AsyncSession) -> str:
     db.add(new_appointment)
     await db.flush()
 
-    display_time = new_start.strftime("%-I:%M %p on %B %d")
+    old_display_date = old_appointment.start_time.strftime("%B %d")
+    old_display_time = old_appointment.start_time.strftime("%-I:%M %p")
+    new_display_date = new_start.strftime("%B %d")
+    new_display_time = new_start.strftime("%-I:%M %p")
+
+    await send_reschedule_sms(
+        customer_name=old_appointment.customer_name,
+        customer_phone=old_appointment.customer_phone,
+        service_name=service.name,
+        stylist_name=best_stylist.name,
+        old_date_str=old_display_date,
+        old_time_str=old_display_time,
+        new_date_str=new_display_date,
+        new_time_str=new_display_time,
+        old_appointment_id=old_appointment.id,
+        new_appointment_id=new_appointment.id,
+    )
+
+    await send_reschedule_notification_email(
+        customer_name=old_appointment.customer_name,
+        customer_phone=old_appointment.customer_phone,
+        service_name=service.name,
+        stylist_name=best_stylist.name,
+        old_date_str=old_display_date,
+        old_time_str=old_display_time,
+        new_date_str=new_display_date,
+        new_time_str=new_display_time,
+        old_appointment_id=old_appointment.id,
+        new_appointment_id=new_appointment.id,
+    )
+
     return (
-        f"Your appointment has been rescheduled to {display_time} "
+        f"Your appointment has been rescheduled to {new_display_time} on {new_display_date} "
         f"with {best_stylist.name}. "
         f"New appointment ID is {new_appointment.id}."
     )

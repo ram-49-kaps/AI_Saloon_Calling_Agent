@@ -1,255 +1,249 @@
-"""One-time script to set up Vapi assistant with tools via API."""
+"""Update the Vapi assistant with multilingual salon settings."""
+
+from __future__ import annotations
+
+import os
+from datetime import datetime, timedelta
 
 import httpx
-from datetime import datetime, timedelta
-import json
 
-VAPI_API_KEY = "f62cf965-5ae2-44c0-a628-275c7e8cd2f5"
-ASSISTANT_ID = "e134e224-7e4d-45e2-a2e4-128d654b84cb"
-SERVER_URL = "https://ai-saloon-calling-agent.onrender.com/api/vapi/webhook"
+
+VAPI_API_KEY = os.getenv("VAPI_API_KEY", "").strip()
+ASSISTANT_ID = os.getenv("VAPI_ASSISTANT_ID", "").strip()
+SERVER_URL = os.getenv(
+    "VAPI_SERVER_URL",
+    "https://ai-saloon-calling-agent.onrender.com/api/vapi/webhook",
+).strip()
+
+TRANSCRIBER_PROVIDER = os.getenv("VAPI_TRANSCRIBER_PROVIDER", "google").strip().lower()
+TRANSCRIBER_MODEL = os.getenv("VAPI_TRANSCRIBER_MODEL", "").strip()
+TRANSCRIBER_LANGUAGE = os.getenv("VAPI_TRANSCRIBER_LANGUAGE", "").strip()
+
+VOICE_PROVIDER = os.getenv("VAPI_VOICE_PROVIDER", "azure").strip().lower()
+VOICE_ID = os.getenv("VAPI_VOICE_ID", "").strip()
+
 
 HEADERS = {
     "Authorization": f"Bearer {VAPI_API_KEY}",
     "Content-Type": "application/json",
 }
 
-# Build system prompt with today's date injected
 now = datetime.now()
-today_str = now.strftime("%Y-%m-%d")  # e.g. 2026-04-13
-today_day = now.strftime("%A")  # e.g. Sunday
+today_str = now.strftime("%Y-%m-%d")
+today_day = now.strftime("%A")
 tomorrow_str = (now + timedelta(days=1)).strftime("%Y-%m-%d")
 
-SYSTEM_PROMPT = f"""You are a salon receptionist AI handling phone calls for appointment booking, cancellation, and rescheduling.
+SYSTEM_PROMPT = f"""You are Riley, a FEMALE salon receptionist AI handling phone calls for booking, cancellation, and rescheduling.
 
-## ABSOLUTE RULES — VIOLATIONS ARE UNACCEPTABLE
-1. EVERY response MUST be written in ENGLISH LETTERS ONLY. NEVER use Devanagari (हिंदी), Gujarati (ગુજરાતી), or ANY non-Latin script. This is NON-NEGOTIABLE.
-2. NEVER invent, fabricate, or guess information. Only state facts from tool results.
-3. NEVER generate random sounds, syllables, or gibberish. If you are unsure how to say something, say it in simple English.
-4. ALL numbers, times, and dates MUST be spoken in English: "3 PM", "April 15", "500 rupees". NEVER transliterate numbers.
-5. Keep EVERY response under 2 sentences. Be brief.
+## ABSOLUTE RULES
+1. Detect whether the caller is speaking English, Hindi, or Gujarati.
+2. Reply in the SAME language as the caller, but ALWAYS in English letters only. Never answer in Devanagari or Gujarati script.
+3. Keep every response under 2 short sentences and avoid long explanations.
+4. Never invent details. Only say dates, times, stylists, and IDs that come from the tools or from the caller.
+5. If the caller says something unclear, especially in Gujarati, ask them to repeat slowly instead of guessing.
 
 ## TODAY'S DATE
 - Today is {today_day}, {today_str}
 - Tomorrow is {tomorrow_str}
-- Use this to resolve "kal", "tomorrow", "parso", etc.
-- Tool date format: YYYY-MM-DD (e.g. {tomorrow_str})
-- Tool time format: ISO 8601 (e.g. {tomorrow_str}T15:00:00)
+- Resolve words like "kal" and "parso" carefully before calling any tool.
 
-## LANGUAGE DETECTION AND RESPONSE
-Detect the customer's language and respond in the SAME language, but ALWAYS in Roman script.
+## LANGUAGE STYLE
+- English: reply normally in English.
+- Hindi: reply in Romanized Hindi with female phrasing like "karti hu" and "check kar leti hu".
+- Gujarati: reply in Romanized Gujarati like "Tamaru appointment confirm thai gayu che".
 
-### If customer speaks ENGLISH:
-- Respond normally in English.
+## BOOKING FLOW
+1. Ask what service and date the caller wants.
+2. ALWAYS call checkAvailability before booking.
+3. After the caller picks a time, collect FULL NAME and 10-digit PHONE NUMBER.
+4. Repeat the phone number digit by digit for confirmation.
+5. Confirm service, date, time, stylist, name, and phone before calling bookAppointment.
+6. After booking succeeds, always say the appointment ID aloud.
 
-### If customer speaks HINDI:
-- Respond in Romanized Hindi (Hinglish). Examples:
-  - "Aapka appointment confirm ho gaya hai."
-  - "Haircut ke liye kal 3 PM, 3:30 PM, aur 4 PM available hai. Kaun sa time chahiye?"
-  - "Aapka naam aur phone number bataiye."
+## CANCELLATION AND RESCHEDULE FLOW
+1. To cancel or reschedule, first ask for the appointment ID.
+2. If the caller does not know the ID, ask for the phone number and call getCustomerAppointments.
+3. Use the retrieved appointment ID for cancelAppointment or rescheduleAppointment.
+4. After success, read the updated appointment details and appointment ID clearly.
 
-### If customer speaks GUJARATI:
-- Respond in Romanized Gujarati (Gujlish). Examples:
-  - "Tamaru appointment confirm thai gayu che."
-  - "Haircut mate kal 3 PM, 3:30 PM, ane 4 PM available che. Kayo time joiye?"
-  - "Tamaru naam ane phone number batavo."
-
-## READING TOOL RESULTS — STRICT FORMAT
-When checkAvailability returns slots like "9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, and 11:00 AM":
-- English: "Available slots are 9 AM, 9:30 AM, 10 AM, 10:30 AM, and 11 AM. Which time works for you?"
-- Hindi: "Available slots hai 9 AM, 9:30 AM, 10 AM, 10:30 AM, aur 11 AM. Kaun sa time chahiye?"
-- Gujarati: "Available slots che 9 AM, 9:30 AM, 10 AM, 10:30 AM, ane 11 AM. Kayo time joiye?"
-
-CRITICAL: Read the times EXACTLY as the tool returns them. NEVER paraphrase, reformat, or invent time values. Say them as simple numbers: "9 AM", "10:30 AM".
-
-## CONVERSATION FLOW
-1. Greet: "Hello! Welcome to our salon. How can I help you today?"
-2. Detect intent (book / cancel / reschedule / check) and collect the service and date safely.
-3. ALWAYS call checkAvailability BEFORE booking (pass stylist_name if customer requested one).
-4. Read available slots clearly from the tool result. Ask the customer to pick a time.
-5. MANDATORY: Once the customer picks a time, you MUST explicitly ask for their FULL NAME and PHONE NUMBER in a single step. For example: "Great, I have that time. May I have your full name and your 10-digit phone number?"
-6. DO NOT proceed until you have received BOTH the name and the phone number explicitly from the customer.
-7. Confirm all details including name and phone, then ask for final confirmation to book.
-8. When booking, pass ONLY verified information to bookAppointment. A confirmation SMS is sent automatically.
-
-## PERSONA & GENDER
-1. You are Riley, a FEMALE receptionist.
-2. When speaking Hindi or Hinglish, ALWAYS use FEMALE verb conjugations.
-   - Say "karti hu" (NOT "karta hu")
-   - Say "check kar leti hu" (NOT "check kar leta hu")
-   - Say "book kar rahi hu" (NOT "book kar raha hu")
-
-## CANCELLATION & RESCHEDULING WORKFLOW
-1. To cancel or reschedule, you need the customer's Appointment ID.
-2. If the customer does NOT know their ID, explicitly ask for their phone number.
-3. Call `getCustomerAppointments` with their phone number to retrieve their upcoming appointments and their corresponding ID.
-4. Use that retrieved ID to perform the `cancelAppointment` or `rescheduleAppointment`.
-5. MANDATORY: After successfully booking an appointment, ALWAYS tell the customer their Appointment ID aloud.
-
-## PHONE NUMBER & NAME COLLECTION RULES
-1. Listen to the phone number VERY carefully.
-2. If the user uses terms like "double" or "triple" (e.g., "double 9" or "double 6"), you MUST translate that into exactly those digits ("99" or "66"). Example: "9 8 double 9" becomes "9899".
-3. Always repeat the full 10-digit phone number back to the customer digit-by-digit to verify it is correct.
-4. ALWAYS REMOVE ALL SPACES and dashes from the phone number before passing it to any tool. Pass exactly a continuous 10-digit number like "9409699664".
-5. ALWAYS record and pass the customer's name into the tools in ENGLISH ALPHABET (Latin script) ONLY. No exceptions.
+## TRANSCRIPTION SAFETY
+1. If you hear double or triple digits in a phone number, convert them carefully.
+2. Repeat critical fields back to the caller before booking, cancelling, or rescheduling.
+3. When reading slots, speak the times exactly as the tool returns them.
 
 ## STYLISTS
-Our stylists: Rahul (Hair, Facial), Priya (Facial, Nails), Amit (Hair)
-- If customer asks for a specific stylist, pass their name to the tools
-- If no preference, the system auto-assigns the best available stylist
-- After checking availability, mention which stylists are available
+Our stylists are Rahul, Priya, and Amit.
 
 ## SERVICES
-Haircut (30 min, 500 rupees), Hair Color (90 min, 2000 rupees), Facial (45 min, 800 rupees), Manicure (30 min, 400 rupees), Pedicure (45 min, 500 rupees), Hair Spa (60 min, 1200 rupees), Beard Trim (15 min, 200 rupees), Threading (15 min, 100 rupees)
-
-## ANTI-HALLUCINATION CHECKLIST (check before every response)
-- Did I collect BOTH name and phone number before calling bookAppointment? (If no, STOP and ask for them)
-- Am I using ONLY English letters? (If no, STOP and rewrite)
-- Am I stating only facts from tool results? (If no, STOP)
-- Are my times/dates exact copies from the tool? (If no, STOP)
-- Is my response under 2 sentences? (If no, shorten it)"""
+Haircut, Hair Color, Facial, Manicure, Pedicure, Hair Spa, Beard Trim, Threading."""
 
 TOOLS = [
     {
         "type": "function",
         "function": {
             "name": "checkAvailability",
-            "description": "Check available appointment slots for a salon service on a specific date, optionally for a specific stylist. ALWAYS call this BEFORE booking.",
+            "description": "Check available appointment slots for a salon service on a specific date, optionally for a specific stylist. Always call this before booking.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "service": {
                         "type": "string",
-                        "description": "The salon service name (e.g., Haircut, Facial, Manicure, Hair Color, Pedicure, Hair Spa, Beard Trim, Threading)"
+                        "description": "The salon service name.",
                     },
                     "date": {
                         "type": "string",
-                        "description": "The date to check availability in YYYY-MM-DD format"
+                        "description": "The date to check in YYYY-MM-DD format.",
                     },
                     "stylist_name": {
                         "type": "string",
-                        "description": "Optional. The preferred stylist name (e.g., Rahul, Priya, Amit). Only pass this if the customer asked for a specific stylist."
-                    }
+                        "description": "Optional preferred stylist name.",
+                    },
                 },
-                "required": ["service", "date"]
-            }
+                "required": ["service", "date"],
+            },
         },
-        "server": {
-            "url": SERVER_URL
-        }
+        "server": {"url": SERVER_URL},
     },
     {
         "type": "function",
         "function": {
             "name": "bookAppointment",
-            "description": "Book a confirmed appointment. Only call this AFTER the customer has confirmed all details. NEVER call without customer saying YES.",
+            "description": "Book a confirmed appointment. Only call this after the customer confirms all details.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "service": {
-                        "type": "string",
-                        "description": "The salon service name"
-                    },
+                    "service": {"type": "string"},
                     "start_time": {
                         "type": "string",
-                        "description": "The appointment start time in ISO 8601 format (e.g., 2026-04-15T15:00:00)"
+                        "description": "ISO 8601 datetime for the appointment start.",
                     },
-                    "customer_name": {
-                        "type": "string",
-                        "description": "The customer's full name"
-                    },
+                    "customer_name": {"type": "string"},
                     "phone": {
                         "type": "string",
-                        "description": "The customer's phone number (10 digits)"
+                        "description": "10-digit phone number without spaces or dashes.",
                     },
                     "preferred_stylist": {
                         "type": "string",
-                        "description": "Optional. The preferred stylist name if customer requested one (e.g., Rahul, Priya, Amit)"
-                    }
+                        "description": "Optional preferred stylist name.",
+                    },
                 },
-                "required": ["service", "start_time", "customer_name", "phone"]
-            }
+                "required": ["service", "start_time", "customer_name", "phone"],
+            },
         },
-        "server": {
-            "url": SERVER_URL
-        }
+        "server": {"url": SERVER_URL},
     },
     {
         "type": "function",
         "function": {
             "name": "cancelAppointment",
-            "description": "Cancel an existing appointment. Can look up by appointment ID or customer phone number.",
+            "description": "Cancel an appointment by appointment ID or by customer phone number.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "appointment_id": {
-                        "type": "string",
-                        "description": "The appointment ID number"
-                    },
-                    "phone": {
-                        "type": "string",
-                        "description": "The customer's phone number to look up their latest booking"
-                    }
-                }
-            }
+                    "appointment_id": {"type": "string"},
+                    "phone": {"type": "string"},
+                },
+            },
         },
-        "server": {
-            "url": SERVER_URL
-        }
+        "server": {"url": SERVER_URL},
     },
     {
         "type": "function",
         "function": {
             "name": "rescheduleAppointment",
-            "description": "Reschedule an existing appointment to a new time.",
+            "description": "Reschedule an existing appointment to a new ISO 8601 datetime.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "appointment_id": {
-                        "type": "string",
-                        "description": "The appointment ID to reschedule"
-                    },
-                    "new_time": {
-                        "type": "string",
-                        "description": "The new appointment time in ISO 8601 format"
-                    }
+                    "appointment_id": {"type": "string"},
+                    "new_time": {"type": "string"},
                 },
-                "required": ["appointment_id", "new_time"]
-            }
+                "required": ["appointment_id", "new_time"],
+            },
         },
-        "server": {
-            "url": SERVER_URL
-        }
+        "server": {"url": SERVER_URL},
     },
     {
         "type": "function",
         "function": {
             "name": "getCustomerAppointments",
-            "description": "Look up a customer's upcoming appointments by their phone number.",
+            "description": "Look up a customer's upcoming appointments using their phone number.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "phone": {
-                        "type": "string",
-                        "description": "The customer's phone number"
-                    }
+                    "phone": {"type": "string"},
                 },
-                "required": ["phone"]
-            }
+                "required": ["phone"],
+            },
         },
-        "server": {
-            "url": SERVER_URL
-        }
+        "server": {"url": SERVER_URL},
     },
 ]
 
 
-def setup():
-    """Set up the Vapi assistant with tools, system prompt, and server URL."""
-    client = httpx.Client(timeout=30)
+def build_transcriber() -> dict:
+    """Build the transcriber configuration for Vapi."""
+    if TRANSCRIBER_PROVIDER == "google":
+        return {
+            "provider": "google",
+            "model": TRANSCRIBER_MODEL or "latest",
+            "language": TRANSCRIBER_LANGUAGE or "multilingual",
+        }
 
-    print("🔧 Updating Vapi Assistant...")
+    if TRANSCRIBER_PROVIDER == "deepgram":
+        return {
+            "provider": "deepgram",
+            "model": TRANSCRIBER_MODEL or "nova-3",
+            "language": TRANSCRIBER_LANGUAGE or "multi",
+            "keywords": [
+                "rahul:3",
+                "priya:3",
+                "amit:3",
+                "haircut:2",
+                "facial:2",
+                "manicure:2",
+                "pedicure:2",
+                "threading:2",
+            ],
+            "keyterm": [
+                "Hair Spa",
+                "Hair Color",
+                "Beard Trim",
+            ],
+        }
 
-    # Update assistant with system prompt, first message, voice, and tools
+    raise ValueError(f"Unsupported VAPI_TRANSCRIBER_PROVIDER: {TRANSCRIBER_PROVIDER}")
+
+
+def build_voice() -> dict:
+    """Build the voice configuration for Vapi."""
+    if VOICE_PROVIDER == "azure":
+        return {
+            "provider": "azure",
+            "voiceId": VOICE_ID or "multilingual-auto",
+        }
+
+    if VOICE_PROVIDER in {"11labs", "elevenlabs"}:
+        return {
+            "provider": "11labs",
+            "voiceId": VOICE_ID or "21m00Tcm4TlvDq8ikWAM",
+        }
+
+    raise ValueError(f"Unsupported VAPI_VOICE_PROVIDER: {VOICE_PROVIDER}")
+
+
+def setup() -> None:
+    """Set up the Vapi assistant with safe multilingual defaults."""
+    if not VAPI_API_KEY or not ASSISTANT_ID:
+        raise RuntimeError("Set VAPI_API_KEY and VAPI_ASSISTANT_ID before running this script.")
+
+    transcriber = build_transcriber()
+    voice = build_voice()
+
+    if transcriber["provider"] == "deepgram":
+        print("⚠️  Deepgram nova-3 multi handles Hindi well, but Gujarati coverage is weaker than Google multilingual.")
+        print("   For reliable Gujarati calls, prefer VAPI_TRANSCRIBER_PROVIDER=google.")
+
     update_data = {
         "model": {
             "provider": "openai",
@@ -257,44 +251,30 @@ def setup():
             "systemPrompt": SYSTEM_PROMPT,
             "tools": TOOLS,
         },
-        "voice": {
-            "provider": "11labs",
-            "voiceId": "21m00Tcm4TlvDq8ikWAM",  # Rachel - clear, natural female voice
-        },
-        "transcriber": {
-            "provider": "deepgram",
-            "model": "nova-3",
-            "language": "multi",  # Enables multilingual detection (EN + Hindi + more)
-        },
+        "voice": voice,
+        "transcriber": transcriber,
         "firstMessage": "Hello! Welcome to our salon. How can I help you today?",
         "firstMessageMode": "assistant-speaks-first",
         "serverUrl": SERVER_URL,
     }
 
-    response = client.patch(
-        f"https://api.vapi.ai/assistant/{ASSISTANT_ID}",
-        headers=HEADERS,
-        json=update_data,
-    )
+    with httpx.Client(timeout=30) as client:
+        print("🔧 Updating Vapi Assistant...")
+        response = client.patch(
+            f"https://api.vapi.ai/assistant/{ASSISTANT_ID}",
+            headers=HEADERS,
+            json=update_data,
+        )
 
-    if response.status_code == 200:
-        print("✅ Assistant updated successfully!")
-        data = response.json()
-        print(f"   Name: {data.get('name', 'N/A')}")
-        print(f"   Model: {data.get('model', {}).get('model', 'N/A')}")
-        print(f"   Server URL: {data.get('serverUrl', 'N/A')}")
-        tools = data.get('model', {}).get('tools', [])
-        print(f"   Tools: {len(tools)} configured")
-        for t in tools:
-            fname = t.get('function', {}).get('name', 'unknown')
-            print(f"     • {fname}")
-        print("\n🎉 Setup complete! You can now test your assistant.")
-        print("   Go to Vapi dashboard → Click 'Talk' button to test with your mic!")
-    else:
-        print(f"❌ Error: {response.status_code}")
-        print(response.text)
+    if response.status_code != 200:
+        raise RuntimeError(f"Vapi update failed ({response.status_code}): {response.text}")
 
-    client.close()
+    data = response.json()
+    print("✅ Assistant updated successfully!")
+    print(f"   Assistant: {data.get('name', 'N/A')}")
+    print(f"   Server URL: {data.get('serverUrl', 'N/A')}")
+    print(f"   Transcriber: {transcriber['provider']} / {transcriber['model']}")
+    print(f"   Voice: {voice['provider']} / {voice['voiceId']}")
 
 
 if __name__ == "__main__":

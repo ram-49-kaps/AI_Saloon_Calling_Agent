@@ -10,11 +10,16 @@ hitting POST /api/vapi/webhook with tool-calls messages.
 
 import httpx
 import json
+import os
 import sys
 from datetime import datetime, timedelta
 
-BASE_URL = "http://localhost:80"
+BASE_URL = os.getenv("BASE_URL", "http://localhost:80").rstrip("/")
 WEBHOOK = f"{BASE_URL}/api/vapi/webhook"
+HEADERS = {}
+
+if os.getenv("VAPI_SERVER_SECRET"):
+    HEADERS["x-vapi-secret"] = os.getenv("VAPI_SERVER_SECRET", "")
 
 # ANSI colors
 GREEN = "\033[92m"
@@ -62,7 +67,7 @@ def print_test(name: str, result: str, success: bool, details: str = ""):
 def send(tool_name: str, arguments: dict, call_id: str = "test_001") -> dict:
     """Send a tool call and return the parsed response."""
     payload = make_tool_call_payload(tool_name, arguments, call_id)
-    resp = httpx.post(WEBHOOK, json=payload, timeout=10)
+    resp = httpx.post(WEBHOOK, json=payload, headers=HEADERS, timeout=10)
     resp.raise_for_status()
     return resp.json()
 

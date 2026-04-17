@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/vapi", tags=["Vapi Webhook"])
 async def vapi_webhook(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(verify_vapi_secret),
 ):
     """
     Main webhook endpoint that Vapi calls during a phone conversation.

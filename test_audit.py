@@ -6,9 +6,14 @@ Run this with the FastAPI server already running on port 8000.
 import httpx
 import asyncio
 import json
+import os
 import sys
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
+HEADERS = {}
+
+if os.getenv("VAPI_SERVER_SECRET"):
+    HEADERS["x-vapi-secret"] = os.getenv("VAPI_SERVER_SECRET", "")
 
 PASS = "✅"
 FAIL = "❌"
@@ -28,7 +33,7 @@ async def run_all_tests():
     print("🔍  FULL SYSTEM AUDIT — Salon Booking AI Agent")
     print("=" * 60)
 
-    async with httpx.AsyncClient(base_url=BASE_URL, timeout=15) as client:
+        async with httpx.AsyncClient(base_url=BASE_URL, timeout=15, headers=HEADERS) as client:
 
         # ────────────────────────────────────────────
         # 1. HEALTH CHECK

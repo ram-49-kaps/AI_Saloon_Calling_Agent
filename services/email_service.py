@@ -1,85 +1,74 @@
-"""Email service — sends appointment confirmation emails via SMTP (Gmail/Brevo)."""
+"""Email service — sends salon event notifications via SMTP."""
 
-import smtplib
+from __future__ import annotations
+
 import logging
-from email.mime.text import MIMEText
+import smtplib
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from config import settings
 
 logger = logging.getLogger(__name__)
 
 
-def build_confirmation_email(
-    customer_name: str,
-    customer_email: str,
-    service_name: str,
-    stylist_name: str,
-    date_str: str,
-    time_str: str,
-    appointment_id: int,
-    duration: int,
-    price: float,
+def _notification_recipients() -> list[str]:
+    """Return the configured notification email recipients."""
+    raw_values = [
+        settings.SALON_OWNER_EMAIL,
+        settings.SALON_NOTIFICATION_EMAILS,
+    ]
+    recipients: list[str] = []
+
+    for raw in raw_values:
+        if not raw:
+            continue
+        for value in raw.split(","):
+            email = value.strip()
+            if email and email not in recipients:
+                recipients.append(email)
+
+    return recipients
+
+
+def _build_event_email(
+    *,
+    subject: str,
+    heading: str,
+    intro: str,
+    accent_color: str,
+    detail_rows: list[tuple[str, str]],
 ) -> MIMEMultipart:
-    """Build a styled confirmation email."""
+    """Build a simple HTML email for salon staff notifications."""
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"✅ Appointment Confirmed — {service_name} on {date_str}"
+    msg["Subject"] = subject
     msg["From"] = f"Salon Booking <{settings.SMTP_FROM_EMAIL}>"
-    msg["To"] = customer_email
+
+    rows_html = "".join(
+        f"""
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 10px 0; color: #888; width: 38%;">{label}</td>
+          <td style="padding: 10px 0; font-weight: 600; color: #333;">{value}</td>
+        </tr>
+        """
+        for label, value in detail_rows
+    )
 
     html = f"""
     <html>
     <body style="font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px;">
-      <div style="max-width: 500px; margin: auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 24px; text-align: center;">
-          <h1 style="color: #fff; margin: 0; font-size: 22px;">✂️ Appointment Confirmed!</h1>
+      <div style="max-width: 560px; margin: auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+        <div style="background: linear-gradient(135deg, {accent_color}, #1f2937); padding: 24px; text-align: center;">
+          <h1 style="color: #fff; margin: 0; font-size: 22px;">{heading}</h1>
         </div>
         <div style="padding: 24px;">
-          <p style="font-size: 16px; color: #333;">Hi <strong>{customer_name}</strong>,</p>
-          <p style="color: #555;">Your salon appointment has been booked successfully. Here are the details:</p>
-
-          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 10px 0; color: #888; width: 40%;">📋 Service</td>
-              <td style="padding: 10px 0; font-weight: bold; color: #333;">{service_name}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 10px 0; color: #888;">📅 Date</td>
-              <td style="padding: 10px 0; font-weight: bold; color: #333;">{date_str}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 10px 0; color: #888;">⏰ Time</td>
-              <td style="padding: 10px 0; font-weight: bold; color: #333;">{time_str}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 10px 0; color: #888;">💇 Stylist</td>
-              <td style="padding: 10px 0; font-weight: bold; color: #333;">{stylist_name}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 10px 0; color: #888;">⏱️ Duration</td>
-              <td style="padding: 10px 0; font-weight: bold; color: #333;">{duration} minutes</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #eee;">
-              <td style="padding: 10px 0; color: #888;">💰 Price</td>
-              <td style="padding: 10px 0; font-weight: bold; color: #333;">₹{int(price)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; color: #888;">🆔 Appointment ID</td>
-              <td style="padding: 10px 0; font-weight: bold; color: #667eea; font-size: 18px;">{appointment_id}</td>
-            </tr>
+          <p style="color: #555; font-size: 15px; margin-top: 0;">{intro}</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 18px 0;">
+            {rows_html}
           </table>
-
-          <div style="background: #f0f4ff; border-radius: 8px; padding: 12px; margin-top: 16px;">
-            <p style="margin: 0; font-size: 13px; color: #555;">
-              ⚠️ <strong>Cancellation Policy:</strong> Appointments can be cancelled up to 1 hour before the scheduled time.
-              To cancel or reschedule, call us and provide your Appointment ID.
-            </p>
-          </div>
-
-          <p style="margin-top: 20px; color: #666; font-size: 14px;">Thank you for choosing our salon! See you soon. 😊</p>
         </div>
         <div style="background: #fafafa; padding: 12px; text-align: center; font-size: 12px; color: #999;">
-          Salon Booking AI Agent • Powered by Vapi
+          Salon Booking AI Agent
         </div>
       </div>
     </body>
@@ -90,43 +79,121 @@ def build_confirmation_email(
     return msg
 
 
-async def send_confirmation_email(
+async def _send_to_recipients(msg: MIMEMultipart, recipients: list[str]) -> bool:
+    """Send an email message to every configured recipient."""
+    if not recipients:
+        logger.info("No notification email recipients configured. Skipping email.")
+        return False
+
+    if not settings.SMTP_HOST or not settings.SMTP_FROM_EMAIL:
+        logger.info("Email not configured (SMTP_HOST / SMTP_FROM_EMAIL missing). Skipping email.")
+        return False
+
+    try:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            if settings.SMTP_USE_TLS:
+                server.starttls()
+            if settings.SMTP_PASSWORD:
+                server.login(settings.SMTP_FROM_EMAIL, settings.SMTP_PASSWORD)
+
+            for recipient in recipients:
+                msg["To"] = recipient
+                server.send_message(msg)
+                del msg["To"]
+
+        logger.info("Email notifications sent to %s", ", ".join(recipients))
+        return True
+    except Exception as exc:
+        logger.error("Failed to send email notifications: %s", exc)
+        return False
+
+
+async def send_booking_notification_email(
+    *,
     customer_name: str,
-    customer_email: str,
+    customer_phone: str,
     service_name: str,
     stylist_name: str,
     date_str: str,
     time_str: str,
     appointment_id: int,
-    duration: int,
     price: float,
 ) -> bool:
-    """Send booking confirmation email. Returns True on success."""
-    if not settings.SMTP_HOST or not settings.SMTP_FROM_EMAIL:
-        print("⚠️  Email not configured (SMTP_HOST missing). Skipping email.")
-        return False
+    """Send a booking notification email to the salon inbox."""
+    msg = _build_event_email(
+        subject=f"New Booking: {service_name} on {date_str}",
+        heading="New Appointment Booked",
+        intro="A new appointment has been confirmed through the calling agent.",
+        accent_color="#2563eb",
+        detail_rows=[
+            ("Customer", customer_name),
+            ("Phone", customer_phone),
+            ("Service", service_name),
+            ("Stylist", stylist_name),
+            ("Date", date_str),
+            ("Time", time_str),
+            ("Price", f"Rs.{int(price)}"),
+            ("Appointment ID", str(appointment_id)),
+        ],
+    )
+    return await _send_to_recipients(msg, _notification_recipients())
 
-    try:
-        msg = build_confirmation_email(
-            customer_name=customer_name,
-            customer_email=customer_email,
-            service_name=service_name,
-            stylist_name=stylist_name,
-            date_str=date_str,
-            time_str=time_str,
-            appointment_id=appointment_id,
-            duration=duration,
-            price=price,
-        )
 
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.starttls()
-            server.login(settings.SMTP_FROM_EMAIL, settings.SMTP_PASSWORD)
-            server.send_message(msg)
+async def send_cancellation_notification_email(
+    *,
+    customer_name: str,
+    customer_phone: str,
+    service_name: str,
+    date_str: str,
+    time_str: str,
+    appointment_id: int,
+) -> bool:
+    """Send a cancellation notification email to the salon inbox."""
+    msg = _build_event_email(
+        subject=f"Cancelled: {service_name} on {date_str}",
+        heading="Appointment Cancelled",
+        intro="An existing appointment has been cancelled through the calling agent.",
+        accent_color="#dc2626",
+        detail_rows=[
+            ("Customer", customer_name),
+            ("Phone", customer_phone),
+            ("Service", service_name),
+            ("Date", date_str),
+            ("Time", time_str),
+            ("Appointment ID", str(appointment_id)),
+        ],
+    )
+    return await _send_to_recipients(msg, _notification_recipients())
 
-        print(f"📧 Confirmation email sent to {customer_email}")
-        return True
 
-    except Exception as e:
-        print(f"❌ Failed to send email: {e}")
-        return False
+async def send_reschedule_notification_email(
+    *,
+    customer_name: str,
+    customer_phone: str,
+    service_name: str,
+    stylist_name: str,
+    old_date_str: str,
+    old_time_str: str,
+    new_date_str: str,
+    new_time_str: str,
+    old_appointment_id: int,
+    new_appointment_id: int,
+) -> bool:
+    """Send a reschedule notification email to the salon inbox."""
+    msg = _build_event_email(
+        subject=f"Rescheduled: {service_name} to {new_date_str}",
+        heading="Appointment Rescheduled",
+        intro="An appointment has been moved to a new slot through the calling agent.",
+        accent_color="#d97706",
+        detail_rows=[
+            ("Customer", customer_name),
+            ("Phone", customer_phone),
+            ("Service", service_name),
+            ("Stylist", stylist_name),
+            ("Old Slot", f"{old_date_str} at {old_time_str}"),
+            ("New Slot", f"{new_date_str} at {new_time_str}"),
+            ("Old Appointment ID", str(old_appointment_id)),
+            ("New Appointment ID", str(new_appointment_id)),
+        ],
+    )
+    return await _send_to_recipients(msg, _notification_recipients())

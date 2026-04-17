@@ -9,13 +9,24 @@ class Settings(BaseSettings):
     PORT: int = 80
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/salon_booking"
     VAPI_SERVER_SECRET: str = ""
+    VAPI_API_KEY: str = ""
+    VAPI_ASSISTANT_ID: str = ""
 
     # SMS notifications (Twilio)
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_PHONE_NUMBER: str = ""
     SALON_OWNER_PHONE: str = ""  # Owner gets notified on every booking
+    SALON_OWNER_EMAIL: str = ""
+    SALON_NOTIFICATION_EMAILS: str = ""
     ADMIN_PIN: str = "1234"  # Mobile app admin login PIN
+
+    # Email notifications (SMTP)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = True
 
     @property
     def ASYNC_DATABASE_URL(self) -> str:
