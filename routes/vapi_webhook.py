@@ -44,12 +44,43 @@ async def vapi_webhook(
 
     if msg_type == "assistant-request":
         from utils.prompt import get_system_prompt
-        logger.info("Serving dynamic assistant-request response with current date.")
+        from scripts.setup_vapi import TOOLS, build_voice, build_transcriber, SERVER_URL
+        logger.info("Serving dynamic assistant-request with fresh date injection.")
+
+        voice = build_voice()
+        transcriber = build_transcriber()
+
         return {
             "assistant": {
                 "model": {
-                    "systemPrompt": get_system_prompt()
-                }
+                    "provider": "openai",
+                    "model": "gpt-4o-mini",
+                    "systemPrompt": get_system_prompt(),
+                    "tools": TOOLS,
+                    "temperature": 0.3,
+                    "maxTokens": 200,
+                },
+                "voice": voice,
+                "transcriber": transcriber,
+                "firstMessage": "Hi there! Welcome to our salon — how can I help you today?",
+                "firstMessageMode": "assistant-speaks-first",
+                "serverUrl": SERVER_URL,
+                "startSpeakingPlan": {
+                    "waitSeconds": 0.4,
+                    "smartEndpointingEnabled": True,
+                },
+                "stopSpeakingPlan": {
+                    "numWords": 0,
+                },
+                "silenceTimeoutSeconds": 20,
+                "responseDelaySeconds": 0.1,
+                "numWordsToInterruptAssistant": 2,
+                "serverMessages": [
+                    "tool-calls",
+                    "end-of-call-report",
+                    "status-update",
+                    "hang"
+                ]
             }
         }
 

@@ -68,6 +68,18 @@ async def send_sms(phone: str, message: str) -> bool:
                 error_msg = data.get("message", "Unknown error")
                 error_code = data.get("code", "N/A")
                 print(f"❌ Twilio error ({error_code}): {error_msg}")
+                if error_code == 21608:
+                    print("   💡 FIX: The recipient number is not verified.")
+                    print("   💡 Add it to Verified Caller IDs: https://console.twilio.com/us1/develop/phone-numbers/manage/verified")
+                elif error_code == 21408:
+                    print("   💡 FIX: India not enabled in Geo-permissions.")
+                    print("   💡 Go to: Messaging → Settings → Geo-permissions → Check 'India'")
+                elif error_code == 21211:
+                    print("   💡 FIX: Invalid phone number format. Must be E.164: +91XXXXXXXXXX")
+                elif error_code == 21614:
+                    print("   💡 FIX: This number is not a valid mobile number or cannot receive SMS.")
+                elif error_code == 21610:
+                    print("   💡 FIX: This number has opted out of receiving messages.")
                 return False
 
     except Exception as e:

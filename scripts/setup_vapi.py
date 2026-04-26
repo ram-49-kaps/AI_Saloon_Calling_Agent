@@ -22,7 +22,7 @@ TRANSCRIBER_PROVIDER = os.getenv("VAPI_TRANSCRIBER_PROVIDER", "deepgram").strip(
 TRANSCRIBER_MODEL = os.getenv("VAPI_TRANSCRIBER_MODEL", "").strip()
 TRANSCRIBER_LANGUAGE = os.getenv("VAPI_TRANSCRIBER_LANGUAGE", "").strip()
 
-VOICE_PROVIDER = os.getenv("VAPI_VOICE_PROVIDER", "11labs").strip().lower()
+VOICE_PROVIDER = os.getenv("VAPI_VOICE_PROVIDER", "cartesia").strip().lower()
 VOICE_ID = os.getenv("VAPI_VOICE_ID", "").strip()
 
 
@@ -174,23 +174,32 @@ def build_transcriber() -> dict:
 
 def build_voice() -> dict:
     """Build the voice configuration for Vapi."""
+    if VOICE_PROVIDER == "cartesia":
+        # Cartesia Sonic-3 — ultra-low latency (<40ms), most human-like for phone calls
+        return {
+            "provider": "cartesia",
+            "voiceId": VOICE_ID or "a0e99841-438c-4a64-b679-ae501e7d6091",  # Cartesia "Brooke" — natural, warm female
+            "model": "sonic-2",
+        }
+
     if VOICE_PROVIDER == "azure":
         return {
             "provider": "azure",
             "voiceId": VOICE_ID or "en-US-JennyNeural",
-            "speed": 0.9,
+            "speed": 1.0,
         }
 
     if VOICE_PROVIDER in {"11labs", "elevenlabs"}:
+        # ElevenLabs Sarah — warm, conversational, multilingual
         return {
             "provider": "11labs",
-            "voiceId": VOICE_ID or "21m00Tcm4TlvDq8ikWAM",
-            "stability": 0.5,
-            "similarityBoost": 0.75,
-            "speed": 0.9,
+            "voiceId": VOICE_ID or "EXAVITQu4vr4xnSDxMaL",  # Sarah — natural, warm
+            "stability": 0.4,  # Lower = more natural emotional variation
+            "similarityBoost": 0.8,
+            "speed": 1.0,  # Normal speed (was 0.9 — made it sound slow/robotic)
         }
 
-    raise ValueError(f"Unsupported VAPI_VOICE_PROVIDER: {VOICE_PROVIDER}")
+    raise ValueError(f"Unsupported VAPI_VOICE_PROVIDER: {VOICE_PROVIDER}. Use 'cartesia', '11labs', or 'azure'.")
 
 
 def setup() -> None:
@@ -208,19 +217,29 @@ def setup() -> None:
     update_data = {
         "model": {
             "provider": "openai",
-            "model": "gpt-4o",
+            "model": "gpt-4o-mini",  # Faster than gpt-4o for lower latency (~300ms vs ~600ms)
             "systemPrompt": SYSTEM_PROMPT,
             "tools": TOOLS,
+            "temperature": 0.3,  # Lower = more consistent, less hallucination
+            "maxTokens": 200,  # Short responses = faster delivery
         },
         "voice": voice,
         "transcriber": transcriber,
         "firstMessage": "Hi there! Welcome to our salon — how can I help you today?",
         "firstMessageMode": "assistant-speaks-first",
         "serverUrl": SERVER_URL,
+        # === LATENCY TUNING ===
         "startSpeakingPlan": {
-            "waitSeconds": 0.8,
-            "smartEndpointingEnabled": "livekit"
+            "waitSeconds": 0.4,  # Reduced from 0.8 → 0.4 for near-instant response
+            "smartEndpointingEnabled": True,  # ML-based detection of when user is done speaking
         },
+        "stopSpeakingPlan": {
+            "numWords": 0,  # Stop immediately when user interrupts (no overlap)
+        },
+        "silenceTimeoutSeconds": 20,  # Hang up after 20s silence
+        "responseDelaySeconds": 0.1,  # Minimal delay before starting to speak
+        "numWordsToInterruptAssistant": 2,  # User needs to say only 2 words to interrupt
+        # === SERVER MESSAGES ===
         "serverMessages": [
             "tool-calls",
             "end-of-call-report",
