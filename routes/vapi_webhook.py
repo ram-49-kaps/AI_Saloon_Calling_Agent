@@ -44,11 +44,95 @@ async def vapi_webhook(
 
     if msg_type == "assistant-request":
         from utils.prompt import get_system_prompt
-        from scripts.setup_vapi import TOOLS, build_voice, build_transcriber, SERVER_URL
         logger.info("Serving dynamic assistant-request with fresh date injection.")
 
-        voice = build_voice()
-        transcriber = build_transcriber()
+        # Self-contained config — no fragile imports from setup_vapi.py
+        webhook_url = "https://ai-saloon-calling-agent.onrender.com/api/vapi/webhook"
+
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "checkAvailability",
+                    "description": "Check available appointment slots for a salon service on a specific date.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "service": {"type": "string", "description": "The salon service name."},
+                            "date": {"type": "string", "description": "Date in YYYY-MM-DD format."},
+                            "stylist_name": {"type": "string", "description": "Optional preferred stylist."},
+                        },
+                        "required": ["service", "date"],
+                    },
+                },
+                "server": {"url": webhook_url},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "bookAppointment",
+                    "description": "Book a confirmed appointment after customer confirms all details.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "service": {"type": "string"},
+                            "start_time": {"type": "string", "description": "ISO 8601 datetime."},
+                            "customer_name": {"type": "string"},
+                            "phone": {"type": "string", "description": "10-digit phone number."},
+                            "preferred_stylist": {"type": "string", "description": "Optional."},
+                        },
+                        "required": ["service", "start_time", "customer_name", "phone"],
+                    },
+                },
+                "server": {"url": webhook_url},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "cancelAppointment",
+                    "description": "Cancel an appointment by ID or phone number.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "appointment_id": {"type": "string"},
+                            "phone": {"type": "string"},
+                        },
+                    },
+                },
+                "server": {"url": webhook_url},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "rescheduleAppointment",
+                    "description": "Reschedule an existing appointment.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "appointment_id": {"type": "string"},
+                            "new_time": {"type": "string"},
+                        },
+                        "required": ["appointment_id", "new_time"],
+                    },
+                },
+                "server": {"url": webhook_url},
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "getCustomerAppointments",
+                    "description": "Look up customer's upcoming appointments by phone number.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "phone": {"type": "string"},
+                        },
+                        "required": ["phone"],
+                    },
+                },
+                "server": {"url": webhook_url},
+            },
+        ]
 
         return {
             "assistant": {
@@ -56,15 +140,23 @@ async def vapi_webhook(
                     "provider": "openai",
                     "model": "gpt-4o-mini",
                     "systemPrompt": get_system_prompt(),
-                    "tools": TOOLS,
+                    "tools": tools,
                     "temperature": 0.3,
                     "maxTokens": 200,
                 },
-                "voice": voice,
-                "transcriber": transcriber,
+                "voice": {
+                    "provider": "cartesia",
+                    "voiceId": "a0e99841-438c-4a64-b679-ae501e7d6091",
+                    "model": "sonic-2",
+                },
+                "transcriber": {
+                    "provider": "deepgram",
+                    "model": "nova-3",
+                    "language": "multi",
+                },
                 "firstMessage": "Hi there! Welcome to our salon — how can I help you today?",
                 "firstMessageMode": "assistant-speaks-first",
-                "serverUrl": SERVER_URL,
+                "serverUrl": webhook_url,
                 "startSpeakingPlan": {
                     "waitSeconds": 0.4,
                     "smartEndpointingEnabled": True,
@@ -80,7 +172,7 @@ async def vapi_webhook(
                     "end-of-call-report",
                     "status-update",
                     "hang"
-                ]
+                ],
             }
         }
 
